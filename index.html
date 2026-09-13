@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZZZ 50/50 Tracker — rng.moe style</title>
+  <meta name="description" content="Grille de carrés des 50/50 et tirages pour Zenless Zone Zero (style rng.moe)" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">Z</div>
+        <div class="brand-title">
+          <h1>
+            ZZZ 50/50 TRACKER
+            <span class="badge-sub">rng.moe style</span>
+          </h1>
+          <p>Historique et statistiques de vos tirages de bannières limitées</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- View mode switcher: Grille active par défaut ! -->
+        <div class="btn-group">
+          <button id="btn-view-matrix" class="btn-tab active" title="Vue Grille de carrés (style rng.moe)">Grille</button>
+          <button id="btn-view-cards" class="btn-tab" title="Vue Cartes Détaillées">Cartes</button>
+        </div>
+
+        <!-- Import button -->
+        <button id="btn-import-csv" class="btn btn-primary" title="Mettre à jour avec un autre fichier CSV">
+          <span>📁</span>
+          <span>Importer CSV</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Statistics Dashboard (rng.moe style) -->
+    <section class="stats-grid">
+      <!-- 50/50 Win Rate -->
+      <div class="stat-card card-winrate">
+        <div class="stat-header">
+          <span class="stat-label">Taux 50/50</span>
+          <span class="stat-icon">🎯</span>
+        </div>
+        <div class="stat-value-container">
+          <span id="stat-winrate" class="stat-value">63.0%</span>
+        </div>
+        <div class="stat-desc">
+          <span class="stat-highlight win"><span id="stat-win-count">17</span> Gagnés</span>
+          <span> / </span>
+          <span class="stat-highlight loss"><span id="stat-loss-count">10</span> Perdus</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="progress-win" class="progress-bar-win" style="width: 63%"></div>
+          <div id="progress-loss" class="progress-bar-loss" style="width: 37%"></div>
+        </div>
+      </div>
+
+      <!-- Streaks -->
+      <div class="stat-card card-streak">
+        <div class="stat-header">
+          <span class="stat-label">Série Active</span>
+          <span class="stat-icon">🔥</span>
+        </div>
+        <div class="stat-value-container">
+          <span id="stat-streak" class="stat-value">6 Victoires</span>
+        </div>
+        <div class="stat-desc">
+          <span id="stat-streak-type">🔥 En cours</span> • Record : <strong id="stat-max-streak">6</strong> d'affilée
+        </div>
+      </div>
+
+      <!-- Total Pulls & Polychromes -->
+      <div class="stat-card card-pulls">
+        <div class="stat-header">
+          <span class="stat-label">Tirages Totaux</span>
+          <span class="stat-icon">🎟️</span>
+        </div>
+        <div class="stat-value-container">
+          <span id="stat-total-pulls" class="stat-value">2 294</span>
+        </div>
+        <div class="stat-desc">
+          ≈ <strong id="stat-polychromes">367 040</strong> Polychromes
+        </div>
+      </div>
+
+      <!-- S-Ranks Count -->
+      <div class="stat-card card-sranks">
+        <div class="stat-header">
+          <span class="stat-label">Total Rangs S</span>
+          <span class="stat-icon">👑</span>
+        </div>
+        <div class="stat-value-container">
+          <span id="stat-total-sranks" class="stat-value">37</span>
+        </div>
+        <div class="stat-desc">
+          <strong><span id="stat-limited-sranks">27</span></strong> Limités • <strong><span id="stat-standard-sranks">10</span></strong> Permanents
+        </div>
+      </div>
+
+      <!-- Average Pity -->
+      <div class="stat-card card-pity">
+        <div class="stat-header">
+          <span class="stat-label">Pity Moyenne</span>
+          <span class="stat-icon">📊</span>
+        </div>
+        <div class="stat-value-container">
+          <span id="stat-avg-srank" class="stat-value">62.0</span>
+          <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">/ S-Rank</span>
+        </div>
+        <div class="stat-desc">
+          Moyenne par Rang S limité : <strong id="stat-avg-limited">85.0</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- Standard Characters Losses Distribution -->
+    <section class="losses-section">
+      <div class="losses-header">
+        <div class="losses-title">
+          <span>Répartition des Pertes 50/50</span>
+        </div>
+      </div>
+      <div id="losses-grid" class="losses-grid">
+        <!-- Dynamically filled with chips for Grace, Soldier 11, Lycaon, etc. -->
+      </div>
+    </section>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="filter-bar">
+      <div class="filter-left">
+        <!-- Filter pills -->
+        <div class="filter-pills">
+          <button class="filter-pill active" data-filter="all">Tous (<span id="count-all">37</span>)</button>
+          <button class="filter-pill pill-win" data-filter="win">50/50 Gagnés (<span id="count-won">17</span>)</button>
+          <button class="filter-pill pill-loss" data-filter="loss">50/50 Perdus (<span id="count-lost">10</span>)</button>
+          <button class="filter-pill pill-guaranteed" data-filter="guaranteed">Garantis (<span id="count-guaranteed">10</span>)</button>
+        </div>
+
+        <!-- Search input -->
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input id="search-input" type="text" placeholder="Chercher un agent..." />
+        </div>
+      </div>
+
+      <div class="filter-right">
+        <!-- Sort selector -->
+        <select id="sort-select" class="sort-select">
+          <option value="newest">Plus récents d'abord</option>
+          <option value="oldest">Plus anciens d'abord</option>
+          <option value="pity-high">Coût le plus élevé</option>
+          <option value="pity-low">Coût le plus bas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main Pulls History Container (Grid by default) -->
+    <main id="pulls-container" class="pulls-grid-matrix">
+      <!-- Rendered by app.js -->
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div>
+        <span>Inspiré par <strong>rng.moe</strong> • Dédié à <strong>Zenless Zone Zero</strong></span>
+      </div>
+      <div>
+        <span>Fichier source : <code>ZZZ - Character History.csv</code></span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Detail Popover Modal -->
+  <div id="detail-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="detail-modal-title" class="modal-title">Détails du Tirage</h3>
+        <button id="detail-modal-close" class="modal-close">&times;</button>
+      </div>
+      <div id="detail-modal-content">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV Upload Modal -->
+  <div id="upload-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Importer un nouveau CSV</h3>
+        <button id="modal-close-btn" class="modal-close">&times;</button>
+      </div>
+      
+      <div id="upload-zone" class="upload-zone">
+        <div class="upload-icon">📥</div>
+        <div class="upload-text">Glissez & déposez votre fichier CSV ici</div>
+        <div class="upload-subtext">ou cliquez pour sélectionner un fichier</div>
+      </div>
+
+      <input id="csv-file-input" type="file" accept=".csv" style="display: none;" />
+
+      <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+        Le fichier doit suivre le format standard de <code>ZZZ - Character History.csv</code> avec les colonnes Patch, Agent, Cost, 50/50 L Agent, etc.
+      </p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
