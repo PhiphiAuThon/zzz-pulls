@@ -7,119 +7,135 @@
  * - Yellow [W] for 50/50 Won (limited characters)
  */
 
-// Known portrait mappings
-const PORTRAIT_MAP = {
-  'ellen': 'portraits/ellen.webp',
-  'koleda': 'portraits/koleda.webp',
-  'zhu yuan': 'portraits/zhu_yuan.webp',
-  'zhuyuan': 'portraits/zhu_yuan.webp',
-  'jane': 'portraits/jane.webp',
-  'grace': 'portraits/grace.webp',
-  'burnice': 'portraits/burnice.webp',
-  'soldier 11': 'portraits/soldier_11.webp',
-  'soldier11': 'portraits/soldier11.webp',
-  's11': 'portraits/s11.webp',
-  'lighter': 'portraits/lighter.webp',
-  'miyabi': 'portraits/miyabi.webp',
-  'nekomata': 'portraits/nekomata.webp',
-  'astra': 'portraits/astra.webp',
-  'lycaon': 'portraits/lycaon.webp',
-  'evelyn': 'portraits/evelyn.webp',
-  'sanby': 'portraits/sanby.webp',
-  's-anby': 'portraits/sanby.webp',
-  's_anby': 'portraits/sanby.webp',
-  'trigger': 'portraits/trigger.webp',
-  'vivian': 'portraits/vivian.webp',
-  'viivan': 'portraits/vivian.webp',
-  'yixuan': 'portraits/yixuan.webp',
-  'jufufu': 'portraits/jufufu.webp',
-  'caesar': 'portraits/caesar.webp',
-  'seed': 'portraits/seed.webp',
-  'orphie': 'portraits/orphie.webp',
-  'lucia': 'portraits/lucia.webp',
-  'dialyn': 'portraits/dialyn.webp',
-  'ysg': 'portraits/ysg.webp',
-  'yeshunguang': 'portraits/yeshunguang.webp',
-  'ye shunguang': 'portraits/yeshunguang.webp',
-  'yuzuha': 'portraits/yuzuha.webp',
-  'promeia': 'portraits/promeia.webp',
-  'velina': 'portraits/velina.webp',
-  'remielle': 'portraits/remielle.webp',
-  'sigrid': 'portraits/sigrid.webp',
-  'rina': 'portraits/rina.webp',
-  'yanagi': 'portraits/yanagi.webp',
-  'alice': 'portraits/alice.webp',
-  'cissia': 'portraits/cissia.webp',
-  'claret': 'portraits/claret.webp',
-  'hugo': 'portraits/hugo.webp',
-  'norma': 'portraits/norma.webp',
-  'roxy': 'portraits/roxy.webp',
-  'silly': 'portraits/silly.webp'
-};
+/* ==========================================================================
+ * ATTENTION / REGLE D'OR ABSOLUE :
+ * NE JAMAIS HARDCODER DE DICTIONNAIRE OU LISTE D'AGENTS / DE MOTEURS ICI !
+ * (Pas de PORTRAIT_MAP, ENGINE_MAP, ENGINE_TO_CHAR, ENGINE_ALIASES, etc.)
+ *
+ * Raison :
+ * L'utilisateur met à jour ses bases de données CSV directement ("ZZZ - Character History.csv",
+ * "ZZZ - Engine History.csv", "ZZZ - Rescreen History.csv") et ajoute des images dans
+ * "characters/" et "engines/". Il ne doit JAMAIS avoir à éditer du code JS lors
+ * de l'ajout de nouveaux personnages ou de nouveaux moteurs W.
+ *
+ * Toute la résolution d'URL d'images et de détection de type doit rester 100% DYNAMIQUE :
+ * - Convention personnages : characters/<slug>.webp (minuscule, espaces/tirets -> underscores)
+ * - Convention moteurs W   : engines/W-Engine_<Slug_Avec_Casse>.webp
+ * - Gestion d'erreur (handleImgError) : bascule dynamique et automatique entre characters/ et engines/
+ *   en cas de 404, puis fallback SVG dynamique avec initiales si le fichier est introuvable.
+ * ========================================================================== */
 
-// Aliases for common abbreviations or alternate names
-const PORTRAIT_ALIASES = {
-  'soldier 11': 'soldier_11',
-  'soldier11': 'soldier11',
-  's 11': 's11',
-  'sanby': 'sanby',
-  's-anby': 'sanby',
-  's_anby': 'sanby',
-  's anby': 'sanby',
-  'ysg': 'ysg',
-  'ye shunguang': 'yeshunguang',
-  'viivan': 'vivian'
-};
-
-// Clean helper to extract character base name from W-Engine string (e.g. "Yixuan WE" -> "Yixuan")
+// Clean helper to extract base name from legacy strings (e.g. "Yixuan WE" -> "Yixuan")
 function getCleanAgentName(name) {
   if (!name) return '';
   return name.trim().replace(/[\s\-_]+we$/i, '').replace(/\(we\)$/i, '').trim();
 }
 
-// S-Rank initials SVG fallback generator
-function getSvgFallback(name) {
-  const clean = getCleanAgentName(name);
-  const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
-  return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23252a3a" width="100" height="100"/><text fill="%23f8e119" font-size="14" font-weight="bold" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">' + encodeURIComponent(label) + '</text></svg>';
+// Detect if a string looks like an engine / W-Engine name
+function isEngineName(name) {
+  if (!name) return false;
+  const raw = String(name).trim();
+  return (/\bwe\b/i).test(raw) ||
+         (/\(we\)$/i).test(raw) ||
+         (/^w[-_ ]?engine/i).test(raw) ||
+         (/\bmoteur\b/i).test(raw);
 }
 
-// Global image error handler: switches to SVG initials fallback
-window.handleImgError = function(img, name) {
+// Check if a pull item is an engine pull
+function isEnginePull(pull) {
+  if (!pull) return false;
+  return Boolean(
+    pull.isEngine ||
+    pull.type === 'engine' ||
+    isEngineName(pull.agent) ||
+    (pull.targetAgent && isEngineName(pull.targetAgent))
+  );
+}
+
+// Dynamic slug generator for characters:
+// e.g. "Zhu Yuan" -> "zhu_yuan", "Soldier 11" -> "soldier_11", "Ellen" -> "ellen"
+function formatCharSlug(name) {
+  if (!name) return '';
+  const clean = getCleanAgentName(name);
+  return clean
+    .toLowerCase()
+    .replace(/[\s\-]+/g, '_')
+    .replace(/[^a-z0-9_]/g, '');
+}
+
+// Dynamic slug generator for W-Engines:
+// e.g. "Qingming Birdcage" -> "Qingming_Birdcage", "W-Engine: Cordis Germina" -> "Cordis_Germina"
+function formatEngineSlug(name) {
+  if (!name) return '';
+  const clean = name.trim()
+    .replace(/^(w[-_ ]?engine|moteur[-_ ]?w)\s*[:\-_]?\s*/i, '')
+    .replace(/[\s\-_]+we$/i, '')
+    .replace(/\(we\)$/i, '')
+    .trim();
+  return clean.replace(/[\s]+/g, '_');
+}
+
+// S-Rank initials SVG fallback generator (no external asset needed)
+function getSvgFallback(name, isEngine = false) {
+  const clean = getCleanAgentName(name);
+  const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
+  const bgColor = isEngine ? '%231a202c' : '%23252a3a';
+  const textColor = isEngine ? '%2338bdf8' : '%23f8e119';
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="${bgColor}" width="100" height="100"/><text fill="${textColor}" font-size="14" font-weight="bold" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(label)}</text></svg>`;
+}
+
+// Dynamic portrait URL resolver: pure dynamic path formatting without any hardcoded dictionary
+function getPortraitUrl(name, isEngine = false) {
+  if (!name) return getSvgFallback('', isEngine);
+  const raw = name.trim();
+  const treatAsEngine = Boolean(isEngine || isEngineName(raw));
+
+  if (treatAsEngine) {
+    const slug = formatEngineSlug(raw);
+    return `engines/W-Engine_${slug}.webp`;
+  }
+  const slug = formatCharSlug(raw);
+  return `characters/${slug}.webp`;
+}
+
+// Dynamic image error handler: tries the opposite folder (characters <-> engines)
+// then normalized accents, before falling back to SVG initials. Self-healing and 100% dynamic.
+window.handleImgError = function(img, name, isEngine = false) {
+  const step = parseInt(img.dataset.errorStep) || 0;
+  img.dataset.errorStep = step + 1;
+
+  if (step === 0) {
+    // 1st retry: try opposite folder in case type was inverted or not yet tagged
+    if (isEngine) {
+      img.src = `characters/${formatCharSlug(name)}.webp`;
+      return;
+    } else {
+      img.src = `engines/W-Engine_${formatEngineSlug(name)}.webp`;
+      return;
+    }
+  }
+
+  if (step === 1) {
+    // 2nd retry: try stripped accents (e.g. Joyau Doré -> Joyau Dore)
+    const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (normalized !== name) {
+      if (isEngine) {
+        img.src = `engines/W-Engine_${formatEngineSlug(normalized)}.webp`;
+      } else {
+        img.src = `characters/${formatCharSlug(normalized)}.webp`;
+      }
+      return;
+    }
+  }
+
+  // Final fallback: dynamic SVG initials (guaranteed display)
   img.onerror = null;
-  img.src = getSvgFallback(name);
+  img.src = getSvgFallback(name, isEngine);
 };
 
 function safeName(str) {
   if (!str) return '';
   return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
-
-// Automatic portrait URL resolver: uses dictionary, aliases, or auto slug path
-function getPortraitUrl(name) {
-  if (!name) return getSvgFallback('');
-  const cleanBase = getCleanAgentName(name);
-  const clean = cleanBase.toLowerCase();
-
-  // 1. Direct match in dictionary
-  if (PORTRAIT_MAP[clean]) {
-    return PORTRAIT_MAP[clean];
-  }
-
-  // 2. Check aliases
-  const aliased = PORTRAIT_ALIASES[clean];
-  if (aliased && PORTRAIT_MAP[aliased]) {
-    return PORTRAIT_MAP[aliased];
-  }
-
-  // 3. Normalized slug (e.g. "Jane Doe" -> "jane_doe")
-  const slug = (aliased || clean).replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
-  if (PORTRAIT_MAP[slug]) {
-    return PORTRAIT_MAP[slug];
-  }
-
-  // 4. Automatic file path convention: portraits/<slug>.webp
-  return `portraits/${slug}.webp`;
 }
 const INITIAL_CHAR_PULLS = [
   { id: 1, patch: '1.0', agent: 'Ellen', agentRaw: 'Ellen', bannerFrom: null, cost: 10, isLoss: true, lostAgent: 'Koleda', lostPity: 80, total: 90, type: 'character' },
@@ -153,9 +169,9 @@ const INITIAL_CHAR_PULLS = [
 
 // Initial W-Engine dataset parsed from "ZZZ - Engine History.csv"
 const INITIAL_ENGINE_PULLS = [
-  { id: 1, patch: '2.6', agent: 'Yixuan WE', agentRaw: 'Yixuan WE', bannerFrom: null, cost: 40, isLoss: false, lostAgent: null, lostPity: 0, total: 40, type: 'engine', isEngine: true },
-  { id: 2, patch: '2.7', agent: 'Seed WE', agentRaw: 'Seed WE', bannerFrom: null, cost: 50, isLoss: false, lostAgent: null, lostPity: 0, total: 50, type: 'engine', isEngine: true },
-  { id: 3, patch: '3.1', agent: 'Remielle WE', agentRaw: 'Remielle WE', bannerFrom: null, cost: 50, isLoss: true, lostAgent: 'Caesar WE', lostPity: 50, total: 100, type: 'engine', isEngine: true }
+  { id: 1, patch: '2.6', agent: 'Qingming Birdcage', agentRaw: 'Qingming Birdcage', bannerFrom: null, cost: 40, isLoss: false, lostAgent: null, lostPity: 0, total: 40, type: 'engine', isEngine: true },
+  { id: 2, patch: '2.7', agent: 'Cordis Germina', agentRaw: 'Cordis Germina', bannerFrom: null, cost: 50, isLoss: false, lostAgent: null, lostPity: 0, total: 50, type: 'engine', isEngine: true },
+  { id: 3, patch: '3.1', agent: 'Ode of Resurrected Wings', agentRaw: 'Ode of Resurrected Wings', bannerFrom: null, cost: 50, isLoss: true, lostAgent: 'Tusks of Fury', lostPity: 50, total: 100, type: 'engine', isEngine: true }
 ];
 
 // Initial Rescreen dataset parsed from "ZZZ - Rescreen History.csv"
@@ -163,7 +179,7 @@ const INITIAL_ENGINE_PULLS = [
 const INITIAL_RESCREEN_PULLS = [
   { id: 1, patch: '2.5', agent: 'Alice', agentRaw: 'Alice', bannerFrom: null, cost: 78, isLoss: false, lostAgent: null, lostPity: 0, total: 78, type: 'rescreen', isEngine: false, isGuaranteedFirst: true },
   { id: 2, patch: '3.1', agent: 'Yuzuha', agentRaw: 'Yuzuha', bannerFrom: null, cost: 8, isLoss: false, lostAgent: null, lostPity: 0, total: 8, type: 'rescreen', isEngine: false, isGuaranteedFirst: true },
-  { id: 3, patch: '3.1', agent: 'Yuzuha WE', agentRaw: 'Yuzuha WE', bannerFrom: null, cost: 68, isLoss: false, lostAgent: null, lostPity: 0, total: 68, type: 'rescreen', isEngine: true, isGuaranteedFirst: true }
+  { id: 3, patch: '3.1', agent: 'Metanukimorphosis', agentRaw: 'Metanukimorphosis', bannerFrom: null, cost: 68, isLoss: false, lostAgent: null, lostPity: 0, total: 68, type: 'rescreen', isEngine: true, isGuaranteedFirst: true }
 ];
 
 // App state
@@ -220,7 +236,7 @@ function getActivePulls() {
 function buildAllSRankItems(pulls) {
   const items = [];
   pulls.forEach(p => {
-    const isEngine = p.isEngine || p.type === 'engine' || (p.agent && (/\bWE$/i).test(p.agent.trim()));
+    const isEngine = isEnginePull(p);
     if (p.isLoss) {
       // If patch contains a slash (e.g. "1.3 / 1.4"), the loss occurred in 1.3
       // and the player saved the guarantee to pull the limited character in 1.4.
@@ -243,7 +259,7 @@ function buildAllSRankItems(pulls) {
         targetAgent: p.bannerFrom || p.agent,
         bannerFrom: p.bannerFrom,
         totalCycle: p.total,
-        type: p.type || 'character',
+        type: p.type || (isEngine ? 'engine' : 'character'),
         isEngine: isEngine,
         isRescreenFirst: false
       });
@@ -258,7 +274,7 @@ function buildAllSRankItems(pulls) {
         bannerFrom: p.bannerFrom,
         lostAgent: p.lostAgent,
         totalCycle: p.total,
-        type: p.type || 'character',
+        type: p.type || (isEngine ? 'engine' : 'character'),
         isEngine: isEngine,
         isRescreenFirst: false
       });
@@ -273,7 +289,7 @@ function buildAllSRankItems(pulls) {
         patch: p.patch,
         bannerFrom: p.bannerFrom,
         totalCycle: p.total,
-        type: p.type || 'rescreen',
+        type: p.type || (isEngine ? 'engine' : 'rescreen'),
         isEngine: isEngine,
         isRescreenFirst: true
       });
@@ -288,7 +304,7 @@ function buildAllSRankItems(pulls) {
         patch: p.patch,
         bannerFrom: p.bannerFrom,
         totalCycle: p.total,
-        type: p.type || 'character',
+        type: p.type || (isEngine ? 'engine' : 'character'),
         isEngine: isEngine,
         isRescreenFirst: false
       });
@@ -457,24 +473,28 @@ function renderLossDistribution(pulls) {
   const lossMap = {};
   for (const p of pulls) {
     if (p.isLoss && p.lostAgent) {
-      lossMap[p.lostAgent] = (lossMap[p.lostAgent] || 0) + 1;
+      const isEng = Boolean(p.isEngine || p.type === 'engine' || isEngineName(p.lostAgent));
+      if (!lossMap[p.lostAgent]) {
+        lossMap[p.lostAgent] = { count: 0, isEngine: isEng };
+      }
+      lossMap[p.lostAgent].count++;
     }
   }
 
-  const sortedLosses = Object.entries(lossMap).sort((a, b) => b[1] - a[1]);
+  const sortedLosses = Object.entries(lossMap).sort((a, b) => b[1].count - a[1].count);
 
   if (sortedLosses.length === 0) {
     container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Aucune perte 50/50 enregistrée !</span>';
     return;
   }
 
-  for (const [agent, count] of sortedLosses) {
+  for (const [agent, info] of sortedLosses) {
     const chip = document.createElement('div');
     chip.className = 'loss-agent-chip';
     chip.innerHTML = `
-      <img src="${getPortraitUrl(agent)}" alt="${agent}" loading="lazy" onerror="handleImgError(this, '${safeName(agent)}')" />
+      <img src="${getPortraitUrl(agent, info.isEngine)}" alt="${agent}" loading="lazy" onerror="handleImgError(this, '${safeName(agent)}', ${info.isEngine})" />
       <span class="loss-agent-name">${agent}</span>
-      <span class="loss-agent-count">${count}</span>
+      <span class="loss-agent-count">${info.count}</span>
     `;
     container.appendChild(chip);
   }
@@ -503,7 +523,7 @@ function renderPulls() {
         const matchAgent = item.agent.toLowerCase().includes(q) || cleanAgent.includes(q);
         const matchTarget = item.targetAgent ? item.targetAgent.toLowerCase().includes(q) : false;
         const matchPatch = item.patch.toLowerCase().includes(q);
-        const isEngine = item.isEngine || item.type === 'engine';
+        const isEngine = isEnginePull(item);
         const matchType = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
         const matchRescreen = item.type === 'rescreen' && q.includes('rescreen');
         if (!matchAgent && !matchTarget && !matchPatch && !matchType && !matchRescreen) return false;
@@ -550,7 +570,7 @@ function renderPulls() {
         const matchAgent = p.agent.toLowerCase().includes(q) || cleanAgent.includes(q);
         const matchLost = p.lostAgent ? p.lostAgent.toLowerCase().includes(q) : false;
         const matchPatch = p.patch.toLowerCase().includes(q);
-        const isEngine = p.isEngine || p.type === 'engine' || (/\bWE$/i).test(p.agent.trim());
+        const isEngine = isEnginePull(p);
         const matchType = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
         const matchRescreen = p.type === 'rescreen' && q.includes('rescreen');
         if (!matchAgent && !matchLost && !matchPatch && !matchType && !matchRescreen) return false;
@@ -590,7 +610,7 @@ function renderMatrixTile(item) {
   const isWon = item.status === 'WON';
   const isLost = item.status === 'LOST';
   const isGuaranteed = item.status === 'GUARANTEED';
-  const isEngine = item.isEngine || item.type === 'engine';
+  const isEngine = isEnginePull(item);
 
   let tileClass = 'is-won';
   let badgeClass = 'win';
@@ -615,10 +635,7 @@ function renderMatrixTile(item) {
   return `
     <div class="matrix-tile ${tileClass} ${isEngine ? 'is-engine' : ''}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${kindLabel} : ${item.agent} (${statusTitle}) - ${item.pity} tirages">
       <!-- Image en fond couvrant tout le carré -->
-      <img class="matrix-img" src="${getPortraitUrl(item.agent)}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}')" />
-
-      <!-- Gros WE au milieu et au-dessus de l'image pour les Moteurs W -->
-      ${isEngine ? `<div class="matrix-we-badge">WE</div>` : ''}
+      <img class="matrix-img" src="${getPortraitUrl(item.agent, isEngine)}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />
 
       <!-- En-tête supérieur au dessus de l'image -->
       <div class="matrix-top-bar">
@@ -641,7 +658,7 @@ function renderMatrixTile(item) {
 function renderPullCard(pull) {
   const isWon = !pull.isLoss && !pull.isGuaranteedFirst;
   const isGuaranteedDirect = Boolean(pull.isGuaranteedFirst);
-  const isEngine = pull.isEngine || pull.type === 'engine' || (pull.agent && (/\bWE$/i).test(pull.agent.trim()));
+  const isEngine = isEnginePull(pull);
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
 
   let cardClass = 'pull-card card-win';
@@ -654,7 +671,7 @@ function renderPullCard(pull) {
     contentHtml = `
       <div class="character-entry">
         <div class="portrait-wrapper is-guaranteed">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
@@ -668,7 +685,7 @@ function renderPullCard(pull) {
     contentHtml = `
       <div class="character-entry">
         <div class="portrait-wrapper is-won">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
@@ -682,7 +699,7 @@ function renderPullCard(pull) {
     contentHtml = `
       <div class="character-entry">
         <div class="portrait-wrapper is-lost">
-          <img class="portrait-img" src="${getPortraitUrl(pull.lostAgent)}" alt="${pull.lostAgent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.lostAgent)}')" />
+          <img class="portrait-img" src="${getPortraitUrl(pull.lostAgent, isEngine)}" alt="${pull.lostAgent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.lostAgent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
@@ -699,7 +716,7 @@ function renderPullCard(pull) {
 
       <div class="character-entry">
         <div class="portrait-wrapper is-guaranteed">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
@@ -743,7 +760,7 @@ function openSRankDetailModal(item) {
   const content = document.getElementById('detail-modal-content');
   if (!modal || !title || !content) return;
 
-  const isEngine = item.isEngine || item.type === 'engine';
+  const isEngine = isEnginePull(item);
   const typePrefix = isEngine ? 'Moteur W — ' : '';
   title.textContent = `Tirage #${item.id} — ${typePrefix}${item.agent}`;
 
@@ -776,7 +793,7 @@ function openSRankDetailModal(item) {
   content.innerHTML = `
     <div class="detail-card-inner">
       <div class="detail-avatar" style="border-color: ${borderColor}; position: relative;">
-        <img src="${getPortraitUrl(item.agent)}" alt="${item.agent}" onerror="handleImgError(this, '${safeName(item.agent)}')" />
+        <img src="${getPortraitUrl(item.agent, isEngine)}" alt="${item.agent}" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />
       </div>
       <div class="detail-info">
         <div class="detail-title">
@@ -823,7 +840,7 @@ function openPullDetailModal(pull) {
 
   const isWon = !pull.isLoss && !pull.isGuaranteedFirst;
   const isGuaranteedDirect = Boolean(pull.isGuaranteedFirst);
-  const isEngine = pull.isEngine || pull.type === 'engine' || (pull.agent && (/\bWE$/i).test(pull.agent.trim()));
+  const isEngine = isEnginePull(pull);
   const typePrefix = isEngine ? 'Moteur W — ' : '';
   title.textContent = `Tirage #${pull.id} — ${typePrefix}${pull.agent}`;
 
@@ -832,7 +849,7 @@ function openPullDetailModal(pull) {
     statusDetails = `
       <div class="detail-card-inner">
         <div class="detail-avatar" style="border-color: var(--guaranteed-color);">
-          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <img src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
         </div>
         <div class="detail-info">
           <div class="detail-title">
@@ -848,7 +865,7 @@ function openPullDetailModal(pull) {
     statusDetails = `
       <div class="detail-card-inner">
         <div class="detail-avatar" style="border-color: var(--win-color);">
-          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <img src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
         </div>
         <div class="detail-info">
           <div class="detail-title">
@@ -864,7 +881,7 @@ function openPullDetailModal(pull) {
     statusDetails = `
       <div class="detail-card-inner">
         <div class="detail-avatar" style="border-color: var(--loss-color);">
-          <img src="${getPortraitUrl(pull.lostAgent)}" alt="${pull.lostAgent}" onerror="handleImgError(this, '${safeName(pull.lostAgent)}')" />
+          <img src="${getPortraitUrl(pull.lostAgent, isEngine)}" alt="${pull.lostAgent}" onerror="handleImgError(this, '${safeName(pull.lostAgent)}', ${isEngine})" />
         </div>
         <div class="detail-info">
           <div class="detail-title">
@@ -872,7 +889,7 @@ function openPullDetailModal(pull) {
             ${isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
           </div>
           <div style="color: var(--loss-color); font-weight: 800;">✗ 50/50 PERDU (Pity ${pull.lostPity})</div>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">Permanent obtenu</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">${isEngine ? 'Moteur W standard obtenu' : 'Permanent obtenu'}</div>
         </div>
       </div>
 
@@ -882,7 +899,7 @@ function openPullDetailModal(pull) {
 
       <div class="detail-card-inner">
         <div class="detail-avatar" style="border-color: var(--guaranteed-color);">
-          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <img src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
         </div>
         <div class="detail-info">
           <div class="detail-title">
@@ -992,7 +1009,7 @@ function parseCSV(text, type = 'character') {
 
     // Detect if this pull is an engine:
     // Either from the engine CSV, or containing the standardized 'WE' suffix
-    const isEngine = type === 'engine' || (/\bWE$/i).test(targetAgent.trim());
+    const isEngine = type === 'engine' || isEngineName(targetAgent);
 
     // Rescreen rule: in each patch where there is a rescreen banner,
     // the 1st character and the 1st engine are 100% guaranteed.
@@ -1088,6 +1105,40 @@ async function autoFetchCSVs() {
       const text = await resRescreen.text();
       const parsed = parseCSV(text, 'rescreen');
       if (parsed.length > 0) {
+        // Dynamically probe whether items in Rescreen are engines (e.g. Metanukimorphosis)
+        for (const p of parsed) {
+          if (p.isEngine) continue;
+          if (isEngineName(p.agent)) {
+            p.isEngine = true;
+          } else {
+            try {
+              const probe = await fetch(`engines/W-Engine_${formatEngineSlug(p.agent)}.webp`, { method: 'HEAD' });
+              if (probe.ok) p.isEngine = true;
+            } catch (e) {}
+          }
+        }
+        // Re-calculate guaranteed status for Rescreen based on dynamically resolved isEngine
+        const seenCharsByPatch = new Set();
+        const seenEnginesByPatch = new Set();
+        for (const p of parsed) {
+          if (!p.isLoss) {
+            if (p.isEngine) {
+              if (!seenEnginesByPatch.has(p.patch)) {
+                seenEnginesByPatch.add(p.patch);
+                p.isGuaranteedFirst = true;
+              } else {
+                p.isGuaranteedFirst = false;
+              }
+            } else {
+              if (!seenCharsByPatch.has(p.patch)) {
+                seenCharsByPatch.add(p.patch);
+                p.isGuaranteedFirst = true;
+              } else {
+                p.isGuaranteedFirst = false;
+              }
+            }
+          }
+        }
         rescreenPulls = parsed;
         rescreenUpdated = true;
       }
