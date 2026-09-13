@@ -219,6 +219,121 @@ header {
 }
 
 /* ==========================================================================
+   CATEGORY NAVIGATION (Personnages / Moteurs W / Tous)
+   ========================================================================== */
+
+.category-nav {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.category-tabs {
+  display: inline-flex;
+  background-color: var(--bg-secondary);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  gap: 4px;
+}
+
+.cat-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 8px 18px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.cat-tab:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.cat-tab.active {
+  background-color: var(--bg-card);
+  color: #fff;
+  border-color: var(--border-bright);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.cat-tab[data-category="character"].active {
+  border-color: rgba(248, 225, 25, 0.4);
+}
+
+.cat-tab[data-category="character"].active .cat-icon {
+  filter: drop-shadow(0 0 6px rgba(248, 225, 25, 0.6));
+}
+
+.cat-tab[data-category="engine"].active {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.cat-tab[data-category="engine"].active .cat-icon {
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
+}
+
+.cat-tab[data-category="rescreen"].active {
+  border-color: rgba(45, 212, 191, 0.4);
+}
+
+.cat-tab[data-category="rescreen"].active .cat-icon {
+  filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.6));
+}
+
+.cat-tab[data-category="all"].active {
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.cat-tab .cat-icon {
+  font-size: 1.05rem;
+}
+
+.cat-badge {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  background-color: var(--bg-input);
+  color: var(--text-muted);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.cat-tab.active .cat-badge {
+  background-color: var(--zzz-yellow);
+  color: #000;
+  border-color: var(--zzz-yellow);
+}
+
+.cat-tab[data-category="engine"].active .cat-badge {
+  background-color: #60a5fa;
+  color: #000;
+  border-color: #60a5fa;
+}
+
+.cat-tab[data-category="rescreen"].active .cat-badge {
+  background-color: #2dd4bf;
+  color: #000;
+  border-color: #2dd4bf;
+}
+
+.cat-tab[data-category="all"].active .cat-badge {
+  background-color: #c084fc;
+  color: #000;
+  border-color: #c084fc;
+}
+
+/* ==========================================================================
    STATISTICS DASHBOARD
    ========================================================================== */
 
@@ -603,6 +718,58 @@ header {
   transform: scale(1.1);
 }
 
+/* ==========================================================================
+   W-ENGINE BADGE OVERLAY (GROS "WE" AU MILIEU ET AU-DESSUS DE L'IMAGE)
+   ========================================================================== */
+
+.matrix-we-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  font-size: 2.2rem;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: 2px;
+  line-height: 1;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(10, 12, 16, 0.78);
+  backdrop-filter: blur(4px);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+}
+
+.matrix-tile:hover .matrix-we-badge {
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+/* Teintes et lueurs néon selon le statut du tirage de Moteur W */
+.matrix-tile.is-won .matrix-we-badge {
+  color: var(--win-color);
+  border-color: rgba(248, 225, 25, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9), 0 0 16px rgba(248, 225, 25, 0.4);
+  text-shadow: 0 0 12px rgba(248, 225, 25, 0.6);
+}
+
+.matrix-tile.is-lost .matrix-we-badge {
+  color: #ff7676;
+  border-color: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9), 0 0 16px rgba(239, 68, 68, 0.4);
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+.matrix-tile.is-guaranteed .matrix-we-badge {
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9), 0 0 16px rgba(59, 130, 246, 0.4);
+  text-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+}
+
 /* Dégradés supprimés : l'image reste 100% lumineuse et visible */
 .matrix-overlay-top,
 .matrix-overlay-bottom {
@@ -797,6 +964,10 @@ header {
 
 .pull-card.card-loss {
   border-left: 4px solid var(--loss-color);
+}
+
+.pull-card.card-guaranteed {
+  border-left: 4px solid var(--guaranteed-color);
 }
 
 .pull-meta {
@@ -1060,6 +1231,72 @@ header {
 }
 
 .modal-close:hover {
+  color: var(--text-primary);
+}
+
+/* Card & modal WE badges */
+.badge-we {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.import-category-selector {
+  margin-bottom: 16px;
+}
+
+.import-cat-title {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.import-cat-options {
+  display: flex;
+  gap: 12px;
+}
+
+.import-radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-secondary);
+}
+
+.import-radio-label:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+
+.import-radio-label input[type="radio"] {
+  accent-color: var(--zzz-yellow);
+}
+
+.import-radio-label:has(input[type="radio"]:checked) {
+  border-color: var(--zzz-yellow);
+  background-color: rgba(248, 225, 25, 0.08);
   color: var(--text-primary);
 }
 

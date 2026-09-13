@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZZZ 50/50 Tracker — rng.moe style</title>
   <meta name="description" content="Grille de carrés des 50/50 et tirages pour Zenless Zone Zero (style rng.moe)" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
 <body>
   <div class="container">
@@ -36,6 +36,32 @@
         </button>
       </div>
     </header>
+
+    <!-- Navigation par Catégorie : Personnages / Moteurs W / Tous -->
+    <nav class="category-nav">
+      <div class="category-tabs">
+        <button id="tab-cat-character" class="cat-tab active" data-category="character" title="Afficher les tirages de Personnages">
+          <span class="cat-icon">👤</span>
+          <span class="cat-text">Personnages</span>
+          <span id="badge-cat-character" class="cat-badge">37</span>
+        </button>
+        <button id="tab-cat-engine" class="cat-tab" data-category="engine" title="Afficher les tirages de Moteurs W">
+          <span class="cat-icon">⚙️</span>
+          <span class="cat-text">Moteurs W</span>
+          <span id="badge-cat-engine" class="cat-badge">4</span>
+        </button>
+        <button id="tab-cat-rescreen" class="cat-tab" data-category="rescreen" title="Afficher les tirages de Rescreen">
+          <span class="cat-icon">🔄</span>
+          <span class="cat-text">Rescreen</span>
+          <span id="badge-cat-rescreen" class="cat-badge">3</span>
+        </button>
+        <button id="tab-cat-all" class="cat-tab" data-category="all" title="Afficher tous les tirages combinés">
+          <span class="cat-icon">🔀</span>
+          <span class="cat-text">Tous</span>
+          <span id="badge-cat-all" class="cat-badge">44</span>
+        </button>
+      </div>
+    </nav>
 
     <!-- Statistics Dashboard (rng.moe style) -->
     <section class="stats-grid">
@@ -169,7 +195,7 @@
         <span>Inspiré par <strong>rng.moe</strong> • Dédié à <strong>Zenless Zone Zero</strong></span>
       </div>
       <div>
-        <span>Fichier source : <code>ZZZ - Character History.csv</code></span>
+        <span>Fichier source : <code id="source-file-label">ZZZ - Character History.csv</code></span>
       </div>
     </footer>
   </div>
@@ -191,10 +217,28 @@
   <div id="upload-modal" class="modal-backdrop">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 class="modal-title">Importer un nouveau CSV</h3>
+        <h3 class="modal-title">Importer un fichier CSV</h3>
         <button id="modal-close-btn" class="modal-close">&times;</button>
       </div>
       
+      <div class="import-category-selector">
+        <label class="import-cat-title">Destination des données :</label>
+        <div class="import-cat-options">
+          <label class="import-radio-label">
+            <input type="radio" name="import-target" value="character" id="import-target-char" checked />
+            <span>👤 Personnages</span>
+          </label>
+          <label class="import-radio-label">
+            <input type="radio" name="import-target" value="engine" id="import-target-engine" />
+            <span>⚙️ Moteurs W</span>
+          </label>
+          <label class="import-radio-label">
+            <input type="radio" name="import-target" value="rescreen" id="import-target-rescreen" />
+            <span>🔄 Rescreen</span>
+          </label>
+        </div>
+      </div>
+
       <div id="upload-zone" class="upload-zone">
         <div class="upload-icon">📥</div>
         <div class="upload-text">Glissez & déposez votre fichier CSV ici</div>
@@ -204,11 +248,11 @@
       <input id="csv-file-input" type="file" accept=".csv" style="display: none;" />
 
       <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
-        Le fichier doit suivre le format standard de <code>ZZZ - Character History.csv</code> avec les colonnes Patch, Agent, Cost, 50/50 L Agent, etc.
+        Le fichier doit suivre le format standard de <code>ZZZ - Character History.csv</code>, <code>ZZZ - Engine History.csv</code> ou <code>ZZZ - Rescreen History.csv</code> avec les colonnes Patch, Agent, Cost, 50/50 L Agent, etc. (détection automatique par nom de fichier).
       </p>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

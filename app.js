@@ -16,8 +16,8 @@ const PORTRAIT_MAP = {
   'jane': 'portraits/jane.webp',
   'grace': 'portraits/grace.webp',
   'burnice': 'portraits/burnice.webp',
-  'soldier 11': 'portraits/s11.webp',
-  'soldier11': 'portraits/s11.webp',
+  'soldier 11': 'portraits/soldier_11.webp',
+  'soldier11': 'portraits/soldier11.webp',
   's11': 'portraits/s11.webp',
   'lighter': 'portraits/lighter.webp',
   'miyabi': 'portraits/miyabi.webp',
@@ -27,9 +27,10 @@ const PORTRAIT_MAP = {
   'evelyn': 'portraits/evelyn.webp',
   'sanby': 'portraits/sanby.webp',
   's-anby': 'portraits/sanby.webp',
+  's_anby': 'portraits/sanby.webp',
   'trigger': 'portraits/trigger.webp',
-  'vivian': 'portraits/viivan.webp',
-  'viivan': 'portraits/viivan.webp',
+  'vivian': 'portraits/vivian.webp',
+  'viivan': 'portraits/vivian.webp',
   'yixuan': 'portraits/yixuan.webp',
   'jufufu': 'portraits/jufufu.webp',
   'caesar': 'portraits/caesar.webp',
@@ -37,7 +38,7 @@ const PORTRAIT_MAP = {
   'orphie': 'portraits/orphie.webp',
   'lucia': 'portraits/lucia.webp',
   'dialyn': 'portraits/dialyn.webp',
-  'ysg': 'portraits/yeshunguang.webp',
+  'ysg': 'portraits/ysg.webp',
   'yeshunguang': 'portraits/yeshunguang.webp',
   'ye shunguang': 'portraits/yeshunguang.webp',
   'yuzuha': 'portraits/yuzuha.webp',
@@ -56,51 +57,126 @@ const PORTRAIT_MAP = {
   'silly': 'portraits/silly.webp'
 };
 
-// Initial dataset parsed from "ZZZ - Character History.csv"
-const INITIAL_PULLS = [
-  { id: 1, patch: '1.0', agent: 'Ellen', agentRaw: 'Ellen', bannerFrom: null, cost: 10, isLoss: true, lostAgent: 'Koleda', lostPity: 80, total: 90 },
-  { id: 2, patch: '1.0', agent: 'Zhu Yuan', agentRaw: 'Zhu Yuan', bannerFrom: null, cost: 70, isLoss: false, lostAgent: null, lostPity: 0, total: 70 },
-  { id: 3, patch: '1.1', agent: 'Jane', agentRaw: 'Jane', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Grace', lostPity: 80, total: 160 },
-  { id: 4, patch: '1.2', agent: 'Burnice', agentRaw: 'Burnice', bannerFrom: null, cost: 73, isLoss: true, lostAgent: 'Soldier 11', lostPity: 80, total: 153 },
-  { id: 5, patch: '1.3 / 1.4', agent: 'Miyabi', agentRaw: 'Lighter -> Miyabi', bannerFrom: 'Lighter', cost: 75, isLoss: true, lostAgent: 'Nekomata', lostPity: 20, total: 95 },
-  { id: 6, patch: '1.5', agent: 'Astra', agentRaw: 'Astra', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Lycaon', lostPity: 30, total: 110 },
-  { id: 7, patch: '1.5', agent: 'Evelyn', agentRaw: 'Evelyn', bannerFrom: null, cost: 75, isLoss: false, lostAgent: null, lostPity: 0, total: 75 },
-  { id: 8, patch: '1.6', agent: 'SAnby', agentRaw: 'SAnby', bannerFrom: null, cost: 90, isLoss: true, lostAgent: 'Grace', lostPity: 75, total: 165 },
-  { id: 9, patch: '1.6', agent: 'Trigger', agentRaw: 'Trigger', bannerFrom: null, cost: 65, isLoss: false, lostAgent: null, lostPity: 0, total: 65 },
-  { id: 10, patch: '1.7', agent: 'Vivian', agentRaw: 'Vivian', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80 },
-  { id: 11, patch: '2.0', agent: 'Yixuan', agentRaw: 'Yixuan', bannerFrom: null, cost: 60, isLoss: false, lostAgent: null, lostPity: 0, total: 60 },
-  { id: 12, patch: '2.0', agent: 'Yixuan', agentRaw: 'Yixuan', bannerFrom: null, cost: 30, isLoss: false, lostAgent: null, lostPity: 0, total: 30 },
-  { id: 13, patch: '2.0', agent: 'Jufufu', agentRaw: 'Jufufu', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Grace', lostPity: 40, total: 120 },
-  { id: 14, patch: '2.0', agent: 'Caesar', agentRaw: 'Caesar', bannerFrom: null, cost: 71, isLoss: false, lostAgent: null, lostPity: 0, total: 71 },
-  { id: 15, patch: '2.2', agent: 'Seed', agentRaw: 'Seed', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80 },
-  { id: 16, patch: '2.2', agent: 'Orphie', agentRaw: 'Orphie', bannerFrom: null, cost: 60, isLoss: false, lostAgent: null, lostPity: 0, total: 60 },
-  { id: 17, patch: '2.3', agent: 'Lucia', agentRaw: 'Lucia', bannerFrom: null, cost: 20, isLoss: false, lostAgent: null, lostPity: 0, total: 20 },
-  { id: 18, patch: '2.3 / 2.4', agent: 'Dialyn', agentRaw: 'Yidhari -> Dialyn', bannerFrom: 'Yidhari', cost: 70, isLoss: true, lostAgent: 'Lycaon', lostPity: 80, total: 150 },
-  { id: 19, patch: '2.4 / 2.5', agent: 'YSG', agentRaw: 'Banyue -> YSG', bannerFrom: 'Banyue', cost: 70, isLoss: true, lostAgent: 'Grace', lostPity: 80, total: 150 },
-  { id: 20, patch: '2.6', agent: 'Yixuan', agentRaw: 'Yixuan', bannerFrom: null, cost: 10, isLoss: false, lostAgent: null, lostPity: 0, total: 10 },
-  { id: 21, patch: '2.6', agent: 'Yuzuha', agentRaw: 'Yuzuha', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Soldier 11', lostPity: 80, total: 160 },
-  { id: 22, patch: '2.8', agent: 'Promeia', agentRaw: 'Promeia', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80 },
-  { id: 23, patch: '3.0', agent: 'Velina', agentRaw: 'Velina', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80 },
-  { id: 24, patch: '3.1', agent: 'Remielle', agentRaw: 'Remielle', bannerFrom: null, cost: 10, isLoss: false, lostAgent: null, lostPity: 0, total: 10 },
-  { id: 25, patch: '3.1', agent: 'Remielle', agentRaw: 'Remielle', bannerFrom: null, cost: 50, isLoss: false, lostAgent: null, lostPity: 0, total: 50 },
-  { id: 26, patch: '3.1', agent: 'Remielle', agentRaw: 'Remielle', bannerFrom: null, cost: 70, isLoss: false, lostAgent: null, lostPity: 0, total: 70 },
-  { id: 27, patch: '3.1', agent: 'Sigrid', agentRaw: 'Sigrid', bannerFrom: null, cost: 30, isLoss: false, lostAgent: null, lostPity: 0, total: 30 }
+// Aliases for common abbreviations or alternate names
+const PORTRAIT_ALIASES = {
+  'soldier 11': 'soldier_11',
+  'soldier11': 'soldier11',
+  's 11': 's11',
+  'sanby': 'sanby',
+  's-anby': 'sanby',
+  's_anby': 'sanby',
+  's anby': 'sanby',
+  'ysg': 'ysg',
+  'ye shunguang': 'yeshunguang',
+  'viivan': 'vivian'
+};
+
+// Clean helper to extract character base name from W-Engine string (e.g. "Yixuan WE" -> "Yixuan")
+function getCleanAgentName(name) {
+  if (!name) return '';
+  return name.trim().replace(/[\s\-_]+we$/i, '').replace(/\(we\)$/i, '').trim();
+}
+
+// S-Rank initials SVG fallback generator
+function getSvgFallback(name) {
+  const clean = getCleanAgentName(name);
+  const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
+  return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23252a3a" width="100" height="100"/><text fill="%23f8e119" font-size="14" font-weight="bold" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">' + encodeURIComponent(label) + '</text></svg>';
+}
+
+// Global image error handler: switches to SVG initials fallback
+window.handleImgError = function(img, name) {
+  img.onerror = null;
+  img.src = getSvgFallback(name);
+};
+
+function safeName(str) {
+  if (!str) return '';
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// Automatic portrait URL resolver: uses dictionary, aliases, or auto slug path
+function getPortraitUrl(name) {
+  if (!name) return getSvgFallback('');
+  const cleanBase = getCleanAgentName(name);
+  const clean = cleanBase.toLowerCase();
+
+  // 1. Direct match in dictionary
+  if (PORTRAIT_MAP[clean]) {
+    return PORTRAIT_MAP[clean];
+  }
+
+  // 2. Check aliases
+  const aliased = PORTRAIT_ALIASES[clean];
+  if (aliased && PORTRAIT_MAP[aliased]) {
+    return PORTRAIT_MAP[aliased];
+  }
+
+  // 3. Normalized slug (e.g. "Jane Doe" -> "jane_doe")
+  const slug = (aliased || clean).replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+  if (PORTRAIT_MAP[slug]) {
+    return PORTRAIT_MAP[slug];
+  }
+
+  // 4. Automatic file path convention: portraits/<slug>.webp
+  return `portraits/${slug}.webp`;
+}
+const INITIAL_CHAR_PULLS = [
+  { id: 1, patch: '1.0', agent: 'Ellen', agentRaw: 'Ellen', bannerFrom: null, cost: 10, isLoss: true, lostAgent: 'Koleda', lostPity: 80, total: 90, type: 'character' },
+  { id: 2, patch: '1.0', agent: 'Zhu Yuan', agentRaw: 'Zhu Yuan', bannerFrom: null, cost: 70, isLoss: false, lostAgent: null, lostPity: 0, total: 70, type: 'character' },
+  { id: 3, patch: '1.1', agent: 'Jane', agentRaw: 'Jane', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Grace', lostPity: 80, total: 160, type: 'character' },
+  { id: 4, patch: '1.2', agent: 'Burnice', agentRaw: 'Burnice', bannerFrom: null, cost: 73, isLoss: true, lostAgent: 'Soldier 11', lostPity: 80, total: 153, type: 'character' },
+  { id: 5, patch: '1.3 / 1.4', agent: 'Miyabi', agentRaw: 'Lighter -> Miyabi', bannerFrom: 'Lighter', cost: 75, isLoss: true, lostAgent: 'Nekomata', lostPity: 20, total: 95, type: 'character' },
+  { id: 6, patch: '1.5', agent: 'Astra', agentRaw: 'Astra', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Lycaon', lostPity: 30, total: 110, type: 'character' },
+  { id: 7, patch: '1.5', agent: 'Evelyn', agentRaw: 'Evelyn', bannerFrom: null, cost: 75, isLoss: false, lostAgent: null, lostPity: 0, total: 75, type: 'character' },
+  { id: 8, patch: '1.6', agent: 'SAnby', agentRaw: 'SAnby', bannerFrom: null, cost: 90, isLoss: true, lostAgent: 'Grace', lostPity: 75, total: 165, type: 'character' },
+  { id: 9, patch: '1.6', agent: 'Trigger', agentRaw: 'Trigger', bannerFrom: null, cost: 65, isLoss: false, lostAgent: null, lostPity: 0, total: 65, type: 'character' },
+  { id: 10, patch: '1.7', agent: 'Vivian', agentRaw: 'Vivian', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80, type: 'character' },
+  { id: 11, patch: '2.0', agent: 'Yixuan', agentRaw: 'Yixuan', bannerFrom: null, cost: 60, isLoss: false, lostAgent: null, lostPity: 0, total: 60, type: 'character' },
+  { id: 12, patch: '2.0', agent: 'Yixuan', agentRaw: 'Yixuan', bannerFrom: null, cost: 30, isLoss: false, lostAgent: null, lostPity: 0, total: 30, type: 'character' },
+  { id: 13, patch: '2.0', agent: 'Jufufu', agentRaw: 'Jufufu', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Grace', lostPity: 40, total: 120, type: 'character' },
+  { id: 14, patch: '2.0', agent: 'Caesar', agentRaw: 'Caesar', bannerFrom: null, cost: 71, isLoss: false, lostAgent: null, lostPity: 0, total: 71, type: 'character' },
+  { id: 15, patch: '2.2', agent: 'Seed', agentRaw: 'Seed', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80, type: 'character' },
+  { id: 16, patch: '2.2', agent: 'Orphie', agentRaw: 'Orphie', bannerFrom: null, cost: 60, isLoss: false, lostAgent: null, lostPity: 0, total: 60, type: 'character' },
+  { id: 17, patch: '2.3', agent: 'Lucia', agentRaw: 'Lucia', bannerFrom: null, cost: 20, isLoss: false, lostAgent: null, lostPity: 0, total: 20, type: 'character' },
+  { id: 18, patch: '2.3 / 2.4', agent: 'Dialyn', agentRaw: 'Yidhari -> Dialyn', bannerFrom: 'Yidhari', cost: 70, isLoss: true, lostAgent: 'Lycaon', lostPity: 80, total: 150, type: 'character' },
+  { id: 19, patch: '2.4 / 2.5', agent: 'YSG', agentRaw: 'Banyue -> YSG', bannerFrom: 'Banyue', cost: 70, isLoss: true, lostAgent: 'Grace', lostPity: 80, total: 150, type: 'character' },
+  { id: 20, patch: '2.6', agent: 'Yixuan', agentRaw: 'Yixuan', bannerFrom: null, cost: 10, isLoss: false, lostAgent: null, lostPity: 0, total: 10, type: 'character' },
+  { id: 21, patch: '2.6', agent: 'Yuzuha', agentRaw: 'Yuzuha', bannerFrom: null, cost: 80, isLoss: true, lostAgent: 'Soldier 11', lostPity: 80, total: 160, type: 'character' },
+  { id: 22, patch: '2.8', agent: 'Promeia', agentRaw: 'Promeia', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80, type: 'character' },
+  { id: 23, patch: '3.0', agent: 'Velina', agentRaw: 'Velina', bannerFrom: null, cost: 80, isLoss: false, lostAgent: null, lostPity: 0, total: 80, type: 'character' },
+  { id: 24, patch: '3.1', agent: 'Remielle', agentRaw: 'Remielle', bannerFrom: null, cost: 10, isLoss: false, lostAgent: null, lostPity: 0, total: 10, type: 'character' },
+  { id: 25, patch: '3.1', agent: 'Remielle', agentRaw: 'Remielle', bannerFrom: null, cost: 50, isLoss: false, lostAgent: null, lostPity: 0, total: 50, type: 'character' },
+  { id: 26, patch: '3.1', agent: 'Remielle', agentRaw: 'Remielle', bannerFrom: null, cost: 70, isLoss: false, lostAgent: null, lostPity: 0, total: 70, type: 'character' },
+  { id: 27, patch: '3.1', agent: 'Sigrid', agentRaw: 'Sigrid', bannerFrom: null, cost: 30, isLoss: false, lostAgent: null, lostPity: 0, total: 30, type: 'character' }
+];
+
+// Initial W-Engine dataset parsed from "ZZZ - Engine History.csv"
+const INITIAL_ENGINE_PULLS = [
+  { id: 1, patch: '2.6', agent: 'Yixuan WE', agentRaw: 'Yixuan WE', bannerFrom: null, cost: 40, isLoss: false, lostAgent: null, lostPity: 0, total: 40, type: 'engine', isEngine: true },
+  { id: 2, patch: '2.7', agent: 'Seed WE', agentRaw: 'Seed WE', bannerFrom: null, cost: 50, isLoss: false, lostAgent: null, lostPity: 0, total: 50, type: 'engine', isEngine: true },
+  { id: 3, patch: '3.1', agent: 'Remielle WE', agentRaw: 'Remielle WE', bannerFrom: null, cost: 50, isLoss: true, lostAgent: 'Caesar WE', lostPity: 50, total: 100, type: 'engine', isEngine: true }
+];
+
+// Initial Rescreen dataset parsed from "ZZZ - Rescreen History.csv"
+// Rules: In each patch where a Rescreen banner appears, the 1st character and the 1st W-Engine are guaranteed.
+const INITIAL_RESCREEN_PULLS = [
+  { id: 1, patch: '2.5', agent: 'Alice', agentRaw: 'Alice', bannerFrom: null, cost: 78, isLoss: false, lostAgent: null, lostPity: 0, total: 78, type: 'rescreen', isEngine: false, isGuaranteedFirst: true },
+  { id: 2, patch: '3.1', agent: 'Yuzuha', agentRaw: 'Yuzuha', bannerFrom: null, cost: 8, isLoss: false, lostAgent: null, lostPity: 0, total: 8, type: 'rescreen', isEngine: false, isGuaranteedFirst: true },
+  { id: 3, patch: '3.1', agent: 'Yuzuha WE', agentRaw: 'Yuzuha WE', bannerFrom: null, cost: 68, isLoss: false, lostAgent: null, lostPity: 0, total: 68, type: 'rescreen', isEngine: true, isGuaranteedFirst: true }
 ];
 
 // App state
-let currentPulls = [...INITIAL_PULLS];
+let charPulls = [...INITIAL_CHAR_PULLS];
+let enginePulls = [...INITIAL_ENGINE_PULLS];
+let rescreenPulls = [...INITIAL_RESCREEN_PULLS];
+let currentCategory = 'character'; // 'character', 'engine', 'rescreen', 'all'
 let currentFilter = 'all'; // 'all', 'win', 'loss', 'guaranteed'
 let currentSearch = '';
 let currentSort = 'newest'; // 'newest', 'oldest', 'pity-high', 'pity-low'
 let currentView = 'matrix'; // 'matrix' (default) or 'cards'
 
 // Helpers
-function getPortraitUrl(name) {
-  if (!name) return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23222" width="100" height="100"/></svg>';
-  const cleanName = name.toLowerCase().trim();
-  return PORTRAIT_MAP[cleanName] || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23252a3a" width="100" height="100"/><text fill="%23f8e119" font-size="14" font-weight="bold" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">' + encodeURIComponent(name.slice(0, 3).toUpperCase()) + '</text></svg>';
-}
-
 function getPityClass(pity) {
   if (pity < 30) return 'early';
   if (pity <= 73) return 'mid';
@@ -108,10 +184,43 @@ function getPityClass(pity) {
   return 'hard';
 }
 
-// Build 37 S-Rank pull items in exact chronological order
+function getPatchNum(p) {
+  if (!p) return 0;
+  const first = p.split('/')[0].trim().replace(',', '.');
+  const parts = first.split('.');
+  const major = parseInt(parts[0]) || 0;
+  const minor = parseInt(parts[1]) || 0;
+  return major * 100 + minor;
+}
+
+function getCombinedPulls() {
+  const combined = [...charPulls, ...enginePulls, ...rescreenPulls];
+  const typeOrder = { 'character': 1, 'engine': 2, 'rescreen': 3 };
+  combined.sort((a, b) => {
+    const patchDiff = getPatchNum(a.patch) - getPatchNum(b.patch);
+    if (patchDiff !== 0) return patchDiff;
+    const typeDiff = (typeOrder[a.type] || 0) - (typeOrder[b.type] || 0);
+    if (typeDiff !== 0) return typeDiff;
+    return a.id - b.id;
+  });
+  return combined.map((p, index) => ({
+    ...p,
+    id: index + 1
+  }));
+}
+
+function getActivePulls() {
+  if (currentCategory === 'character') return charPulls;
+  if (currentCategory === 'engine') return enginePulls;
+  if (currentCategory === 'rescreen') return rescreenPulls;
+  return getCombinedPulls();
+}
+
+// Build individual S-Rank pull items in exact chronological order
 function buildAllSRankItems(pulls) {
   const items = [];
   pulls.forEach(p => {
+    const isEngine = p.isEngine || p.type === 'engine' || (p.agent && (/\bWE$/i).test(p.agent.trim()));
     if (p.isLoss) {
       // If patch contains a slash (e.g. "1.3 / 1.4"), the loss occurred in 1.3
       // and the player saved the guarantee to pull the limited character in 1.4.
@@ -123,7 +232,7 @@ function buildAllSRankItems(pulls) {
         guarPatch = parts[1] || parts[0] || p.patch;
       }
 
-      // 1) The standard character pulled (50/50 LOST)
+      // 1) The standard character/engine pulled (50/50 LOST)
       items.push({
         id: items.length + 1,
         eventId: p.id,
@@ -133,9 +242,12 @@ function buildAllSRankItems(pulls) {
         patch: lossPatch,
         targetAgent: p.bannerFrom || p.agent,
         bannerFrom: p.bannerFrom,
-        totalCycle: p.total
+        totalCycle: p.total,
+        type: p.type || 'character',
+        isEngine: isEngine,
+        isRescreenFirst: false
       });
-      // 2) The guaranteed limited character pulled
+      // 2) The guaranteed limited character/engine pulled
       items.push({
         id: items.length + 1,
         eventId: p.id,
@@ -145,7 +257,25 @@ function buildAllSRankItems(pulls) {
         patch: guarPatch,
         bannerFrom: p.bannerFrom,
         lostAgent: p.lostAgent,
-        totalCycle: p.total
+        totalCycle: p.total,
+        type: p.type || 'character',
+        isEngine: isEngine,
+        isRescreenFirst: false
+      });
+    } else if (p.isGuaranteedFirst) {
+      // Rescreen rule: 1st character or 1st engine guaranteed in this version!
+      items.push({
+        id: items.length + 1,
+        eventId: p.id,
+        agent: p.agent,
+        pity: p.cost,
+        status: 'GUARANTEED',
+        patch: p.patch,
+        bannerFrom: p.bannerFrom,
+        totalCycle: p.total,
+        type: p.type || 'rescreen',
+        isEngine: isEngine,
+        isRescreenFirst: true
       });
     } else {
       // Won 50/50
@@ -157,7 +287,10 @@ function buildAllSRankItems(pulls) {
         status: 'WON',
         patch: p.patch,
         bannerFrom: p.bannerFrom,
-        totalCycle: p.total
+        totalCycle: p.total,
+        type: p.type || 'character',
+        isEngine: isEngine,
+        isRescreenFirst: false
       });
     }
   });
@@ -165,7 +298,9 @@ function buildAllSRankItems(pulls) {
 }
 
 function calculateStreaks(pulls) {
-  const chrono = [...pulls].sort((a, b) => a.id - b.id);
+  // Direct guarantees (Rescreen 1st pulls) do not count towards 50/50 streaks
+  const fiftyFiftyPulls = pulls.filter(p => !p.isGuaranteedFirst);
+  const chrono = [...fiftyFiftyPulls].sort((a, b) => a.id - b.id);
   let currentStreak = 0;
   let isCurrentWin = true;
   let maxWinStreak = 0;
@@ -192,40 +327,73 @@ function calculateStreaks(pulls) {
     }
   }
 
-  return { currentStreak, isCurrentWin, maxWinStreak };
+  return { currentStreak, isCurrentWin, maxWinStreak, hasFiftyFifty: chrono.length > 0 };
+}
+
+// Update Category Tabs Badges
+function updateCategoryBadges() {
+  const charItems = buildAllSRankItems(charPulls);
+  const engineItems = buildAllSRankItems(enginePulls);
+  const rescreenItems = buildAllSRankItems(rescreenPulls);
+  const allItems = buildAllSRankItems(getCombinedPulls());
+
+  const bChar = document.getElementById('badge-cat-character');
+  const bEngine = document.getElementById('badge-cat-engine');
+  const bRescreen = document.getElementById('badge-cat-rescreen');
+  const bAll = document.getElementById('badge-cat-all');
+
+  if (bChar) bChar.textContent = charItems.length;
+  if (bEngine) bEngine.textContent = engineItems.length;
+  if (bRescreen) bRescreen.textContent = rescreenItems.length;
+  if (bAll) bAll.textContent = allItems.length;
 }
 
 // Update UI KPI Cards & Filters
 function updateStats(pulls) {
+  const allItems = buildAllSRankItems(pulls);
   const totalPulls = pulls.reduce((sum, p) => sum + p.total, 0);
-  const wins = pulls.filter(p => !p.isLoss).length;
+  const wins = pulls.filter(p => !p.isLoss && !p.isGuaranteedFirst).length;
   const losses = pulls.filter(p => p.isLoss).length;
   const total5050 = wins + losses;
-  const winRate = total5050 > 0 ? ((wins / total5050) * 100).toFixed(1) : 0;
+  const winRate = total5050 > 0 ? ((wins / total5050) * 100).toFixed(1) : null;
   const polychromes = totalPulls * 160;
 
-  const totalSRanks = pulls.length + losses;
+  const totalSRanks = allItems.length;
   const avgPitySRank = totalSRanks > 0 ? (totalPulls / totalSRanks).toFixed(1) : 0;
   const avgPityLimited = pulls.length > 0 ? (totalPulls / pulls.length).toFixed(1) : 0;
 
-  const { currentStreak, isCurrentWin, maxWinStreak } = calculateStreaks(pulls);
+  const { currentStreak, isCurrentWin, maxWinStreak, hasFiftyFifty } = calculateStreaks(pulls);
 
-  document.getElementById('stat-winrate').textContent = `${winRate}%`;
+  const winrateEl = document.getElementById('stat-winrate');
+  if (winrateEl) {
+    winrateEl.textContent = total5050 > 0 ? `${winRate}%` : 'N/A';
+  }
   document.getElementById('stat-win-count').textContent = wins;
   document.getElementById('stat-loss-count').textContent = losses;
   
   const barWin = document.getElementById('progress-win');
   const barLoss = document.getElementById('progress-loss');
   if (barWin && barLoss) {
-    barWin.style.width = `${winRate}%`;
-    barLoss.style.width = `${100 - winRate}%`;
+    if (total5050 > 0) {
+      barWin.style.width = `${winRate}%`;
+      barLoss.style.width = `${100 - winRate}%`;
+    } else {
+      barWin.style.width = '0%';
+      barLoss.style.width = '0%';
+    }
   }
 
   const streakEl = document.getElementById('stat-streak');
   if (streakEl) {
-    streakEl.textContent = `${currentStreak} ${isCurrentWin ? 'Victoires' : 'Défaites'}`;
-    document.getElementById('stat-streak-type').textContent = isCurrentWin ? '🔥 En cours' : '💀 En cours';
-    document.getElementById('stat-max-streak').textContent = maxWinStreak;
+    if (hasFiftyFifty) {
+      streakEl.textContent = `${currentStreak} ${isCurrentWin ? 'Victoires' : 'Défaites'}`;
+      document.getElementById('stat-streak-type').textContent = isCurrentWin ? '🔥 En cours' : '💀 En cours';
+      document.getElementById('stat-max-streak').textContent = maxWinStreak;
+    } else {
+      streakEl.textContent = '—';
+      document.getElementById('stat-streak-type').textContent = 'Aucun 50/50';
+      document.getElementById('stat-max-streak').textContent = '0';
+    }
   }
 
   document.getElementById('stat-total-pulls').textContent = totalPulls.toLocaleString();
@@ -242,11 +410,43 @@ function updateStats(pulls) {
   renderLossDistribution(pulls);
 
   // Update filter counts
+  const countWon = allItems.filter(i => i.status === 'WON').length;
+  const countLost = allItems.filter(i => i.status === 'LOST').length;
+  const countGuaranteed = allItems.filter(i => i.status === 'GUARANTEED').length;
+
   document.getElementById('count-all').textContent = totalSRanks;
-  document.getElementById('count-won').textContent = wins;
-  document.getElementById('count-lost').textContent = losses;
+  document.getElementById('count-won').textContent = countWon;
+  document.getElementById('count-lost').textContent = countLost;
   const countGuaranteedEl = document.getElementById('count-guaranteed');
-  if (countGuaranteedEl) countGuaranteedEl.textContent = losses;
+  if (countGuaranteedEl) countGuaranteedEl.textContent = countGuaranteed;
+
+  // Update source file label
+  const sourceLabel = document.getElementById('source-file-label');
+  if (sourceLabel) {
+    if (currentCategory === 'character') {
+      sourceLabel.textContent = 'ZZZ - Character History.csv';
+    } else if (currentCategory === 'engine') {
+      sourceLabel.textContent = 'ZZZ - Engine History.csv';
+    } else if (currentCategory === 'rescreen') {
+      sourceLabel.textContent = 'ZZZ - Rescreen History.csv';
+    } else {
+      sourceLabel.textContent = 'ZZZ - Character History.csv + ZZZ - Engine History.csv + ZZZ - Rescreen History.csv';
+    }
+  }
+
+  // Update search placeholder
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    if (currentCategory === 'character') {
+      searchInput.placeholder = 'Chercher un agent...';
+    } else if (currentCategory === 'engine') {
+      searchInput.placeholder = 'Chercher un moteur W...';
+    } else if (currentCategory === 'rescreen') {
+      searchInput.placeholder = 'Chercher un tirage Rescreen (agent ou WE)...';
+    } else {
+      searchInput.placeholder = 'Chercher un agent ou moteur W...';
+    }
+  }
 }
 
 function renderLossDistribution(pulls) {
@@ -272,7 +472,7 @@ function renderLossDistribution(pulls) {
     const chip = document.createElement('div');
     chip.className = 'loss-agent-chip';
     chip.innerHTML = `
-      <img src="${getPortraitUrl(agent)}" alt="${agent}" loading="lazy" />
+      <img src="${getPortraitUrl(agent)}" alt="${agent}" loading="lazy" onerror="handleImgError(this, '${safeName(agent)}')" />
       <span class="loss-agent-name">${agent}</span>
       <span class="loss-agent-count">${count}</span>
     `;
@@ -280,14 +480,16 @@ function renderLossDistribution(pulls) {
   }
 }
 
-// Render the grid (37 individual S-Ranks) or detailed cards list
+// Render the grid (individual S-Ranks) or detailed cards list
 function renderPulls() {
   const container = document.getElementById('pulls-container');
   if (!container) return;
 
+  const activePulls = getActivePulls();
+
   if (currentView === 'matrix') {
-    // 37 individual S-Rank squares
-    const allItems = buildAllSRankItems(currentPulls);
+    // Individual S-Rank squares
+    const allItems = buildAllSRankItems(activePulls);
 
     // Filter
     let filtered = allItems.filter(item => {
@@ -296,11 +498,15 @@ function renderPulls() {
       if (currentFilter === 'guaranteed' && item.status !== 'GUARANTEED') return false;
 
       if (currentSearch) {
-        const q = currentSearch.toLowerCase();
-        const matchAgent = item.agent.toLowerCase().includes(q);
+        const q = currentSearch.toLowerCase().trim();
+        const cleanAgent = getCleanAgentName(item.agent).toLowerCase();
+        const matchAgent = item.agent.toLowerCase().includes(q) || cleanAgent.includes(q);
         const matchTarget = item.targetAgent ? item.targetAgent.toLowerCase().includes(q) : false;
         const matchPatch = item.patch.toLowerCase().includes(q);
-        if (!matchAgent && !matchTarget && !matchPatch) return false;
+        const isEngine = item.isEngine || item.type === 'engine';
+        const matchType = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
+        const matchRescreen = item.type === 'rescreen' && q.includes('rescreen');
+        if (!matchAgent && !matchTarget && !matchPatch && !matchType && !matchRescreen) return false;
       }
       return true;
     });
@@ -334,16 +540,20 @@ function renderPulls() {
 
   } else {
     // Detailed cards view
-    let filtered = currentPulls.filter(p => {
-      if (currentFilter === 'win' && p.isLoss) return false;
+    let filtered = activePulls.filter(p => {
+      if (currentFilter === 'win' && (p.isLoss || p.isGuaranteedFirst)) return false;
       if (currentFilter === 'loss' && !p.isLoss) return false;
-      if (currentFilter === 'guaranteed') return false;
+      if (currentFilter === 'guaranteed' && !p.isLoss && !p.isGuaranteedFirst) return false;
       if (currentSearch) {
-        const q = currentSearch.toLowerCase();
-        const matchAgent = p.agent.toLowerCase().includes(q);
+        const q = currentSearch.toLowerCase().trim();
+        const cleanAgent = getCleanAgentName(p.agent).toLowerCase();
+        const matchAgent = p.agent.toLowerCase().includes(q) || cleanAgent.includes(q);
         const matchLost = p.lostAgent ? p.lostAgent.toLowerCase().includes(q) : false;
         const matchPatch = p.patch.toLowerCase().includes(q);
-        if (!matchAgent && !matchLost && !matchPatch) return false;
+        const isEngine = p.isEngine || p.type === 'engine' || (/\bWE$/i).test(p.agent.trim());
+        const matchType = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
+        const matchRescreen = p.type === 'rescreen' && q.includes('rescreen');
+        if (!matchAgent && !matchLost && !matchPatch && !matchType && !matchRescreen) return false;
       }
       return true;
     });
@@ -368,7 +578,7 @@ function renderPulls() {
     container.querySelectorAll('[data-pull-id]').forEach(el => {
       el.addEventListener('click', () => {
         const id = parseInt(el.dataset.pullId);
-        const pull = currentPulls.find(p => p.id === id);
+        const pull = activePulls.find(p => p.id === id);
         if (pull) openPullDetailModal(pull);
       });
     });
@@ -380,6 +590,7 @@ function renderMatrixTile(item) {
   const isWon = item.status === 'WON';
   const isLost = item.status === 'LOST';
   const isGuaranteed = item.status === 'GUARANTEED';
+  const isEngine = item.isEngine || item.type === 'engine';
 
   let tileClass = 'is-won';
   let badgeClass = 'win';
@@ -395,12 +606,19 @@ function renderMatrixTile(item) {
     letter = 'G';
   }
 
-  const statusTitle = isWon ? '50/50 Gagné' : (isLost ? `50/50 Perdu (bannière ${item.targetAgent})` : `Garanti`);
+  const kindLabel = isEngine ? 'Moteur W' : 'Agent';
+  let statusTitle = isWon ? '50/50 Gagné' : (isLost ? `50/50 Perdu (bannière ${item.targetAgent})` : 'Garanti');
+  if (item.isRescreenFirst) {
+    statusTitle = `1er ${kindLabel} garanti (Rescreen v${item.patch})`;
+  }
 
   return `
-    <div class="matrix-tile ${tileClass}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${item.agent} (${statusTitle}) - ${item.pity} tirages">
+    <div class="matrix-tile ${tileClass} ${isEngine ? 'is-engine' : ''}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${kindLabel} : ${item.agent} (${statusTitle}) - ${item.pity} tirages">
       <!-- Image en fond couvrant tout le carré -->
-      <img class="matrix-img" src="${getPortraitUrl(item.agent)}" alt="${item.agent}" loading="lazy" />
+      <img class="matrix-img" src="${getPortraitUrl(item.agent)}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}')" />
+
+      <!-- Gros WE au milieu et au-dessus de l'image pour les Moteurs W -->
+      ${isEngine ? `<div class="matrix-we-badge">WE</div>` : ''}
 
       <!-- En-tête supérieur au dessus de l'image -->
       <div class="matrix-top-bar">
@@ -421,20 +639,40 @@ function renderMatrixTile(item) {
 
 // HTML for detailed card view
 function renderPullCard(pull) {
-  const isWon = !pull.isLoss;
-  const cardClass = isWon ? 'pull-card card-win' : 'pull-card card-loss';
+  const isWon = !pull.isLoss && !pull.isGuaranteedFirst;
+  const isGuaranteedDirect = Boolean(pull.isGuaranteedFirst);
+  const isEngine = pull.isEngine || pull.type === 'engine' || (pull.agent && (/\bWE$/i).test(pull.agent.trim()));
+  const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
+
+  let cardClass = 'pull-card card-win';
+  if (pull.isLoss) cardClass = 'pull-card card-loss';
+  else if (isGuaranteedDirect) cardClass = 'pull-card card-guaranteed';
 
   let contentHtml = '';
 
-  if (isWon) {
+  if (isGuaranteedDirect) {
+    contentHtml = `
+      <div class="character-entry">
+        <div class="portrait-wrapper is-guaranteed">
+          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
+        </div>
+        <div class="character-info">
+          <div class="character-name">${pull.agent} ${engineBadge}</div>
+          <span class="status-badge badge-guaranteed">★ 100% GARANTI</span>
+          <span class="banner-notice">1er ${isEngine ? 'Moteur W' : 'Agent'} garanti de la version ${pull.patch} (Rescreen)</span>
+        </div>
+      </div>
+    `;
+  } else if (isWon) {
     contentHtml = `
       <div class="character-entry">
         <div class="portrait-wrapper is-won">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" />
-          <div class="rank-badge">S</div>
+          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
-          <div class="character-name">${pull.agent}</div>
+          <div class="character-name">${pull.agent} ${engineBadge}</div>
           <span class="status-badge badge-won">✓ 50/50 GAGNÉ</span>
           ${pull.bannerFrom ? `<span class="banner-notice">Bannière : ${pull.bannerFrom}</span>` : ''}
         </div>
@@ -444,11 +682,11 @@ function renderPullCard(pull) {
     contentHtml = `
       <div class="character-entry">
         <div class="portrait-wrapper is-lost">
-          <img class="portrait-img" src="${getPortraitUrl(pull.lostAgent)}" alt="${pull.lostAgent}" loading="lazy" />
-          <div class="rank-badge">S</div>
+          <img class="portrait-img" src="${getPortraitUrl(pull.lostAgent)}" alt="${pull.lostAgent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.lostAgent)}')" />
+          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
-          <div class="character-name">${pull.lostAgent}</div>
+          <div class="character-name">${pull.lostAgent} ${engineBadge}</div>
           <span class="status-badge badge-lost">✗ 50/50 PERDU</span>
           <span style="font-size: 0.72rem; color: var(--text-muted);">Pity : <strong style="color:var(--loss-color); font-family:var(--font-mono);">${pull.lostPity}</strong></span>
         </div>
@@ -461,11 +699,11 @@ function renderPullCard(pull) {
 
       <div class="character-entry">
         <div class="portrait-wrapper is-guaranteed">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" />
-          <div class="rank-badge">S</div>
+          <img class="portrait-img" src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
-          <div class="character-name">${pull.agent}</div>
+          <div class="character-name">${pull.agent} ${engineBadge}</div>
           <span class="status-badge badge-guaranteed">★ GARANTI</span>
           ${pull.bannerFrom ? `<span class="banner-notice">${pull.bannerFrom} ➔ ${pull.agent}</span>` : ''}
         </div>
@@ -473,7 +711,7 @@ function renderPullCard(pull) {
     `;
   }
 
-  const costPityClass = isWon ? getPityClass(pull.cost) : getPityClass(pull.cost);
+  const costPityClass = getPityClass(pull.cost);
 
   return `
     <div class="${cardClass}" data-pull-id="${pull.id}">
@@ -488,7 +726,7 @@ function renderPullCard(pull) {
 
       <div class="pull-stats">
         <div class="pity-pill ${costPityClass}">
-          ${isWon ? `${pull.cost} Pity` : `+${pull.cost} Pity`}
+          ${pull.isLoss ? `+${pull.cost} Pity` : `${pull.cost} Pity`}
         </div>
         <div class="pull-total-cost">
           Total : <strong>${pull.total}</strong> tirages
@@ -505,7 +743,9 @@ function openSRankDetailModal(item) {
   const content = document.getElementById('detail-modal-content');
   if (!modal || !title || !content) return;
 
-  title.textContent = `Tirage #${item.id} — ${item.agent}`;
+  const isEngine = item.isEngine || item.type === 'engine';
+  const typePrefix = isEngine ? 'Moteur W — ' : '';
+  title.textContent = `Tirage #${item.id} — ${typePrefix}${item.agent}`;
 
   let statusHtml = '';
   let borderColor = 'var(--win-color)';
@@ -519,6 +759,12 @@ function openSRankDetailModal(item) {
       <div style="font-size: 0.8rem; color: var(--text-muted);">Tiré sur la bannière : ${item.targetAgent}</div>
     `;
     borderColor = 'var(--loss-color)';
+  } else if (item.isRescreenFirst) {
+    statusHtml = `
+      <div style="color: var(--guaranteed-color); font-weight: 800;">★ RANG S GARANTI D'OFFICE (Pity ${item.pity})</div>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">1er ${isEngine ? 'Moteur W' : 'personnage'} garanti sur la bannière Rescreen en version ${item.patch}</div>
+    `;
+    borderColor = 'var(--guaranteed-color)';
   } else {
     statusHtml = `
       <div style="color: var(--guaranteed-color); font-weight: 800;">★ RANG S GARANTI (Pity ${item.pity})</div>
@@ -529,13 +775,17 @@ function openSRankDetailModal(item) {
 
   content.innerHTML = `
     <div class="detail-card-inner">
-      <div class="detail-avatar" style="border-color: ${borderColor};">
-        <img src="${getPortraitUrl(item.agent)}" alt="${item.agent}" />
+      <div class="detail-avatar" style="border-color: ${borderColor}; position: relative;">
+        <img src="${getPortraitUrl(item.agent)}" alt="${item.agent}" onerror="handleImgError(this, '${safeName(item.agent)}')" />
       </div>
       <div class="detail-info">
-        <div class="detail-title">${item.agent}</div>
+        <div class="detail-title">
+          ${item.agent}
+          ${isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
+        </div>
         ${statusHtml}
         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Patch : v${item.patch}</div>
+        ${isEngine ? `<div style="font-size: 0.78rem; color: var(--zzz-yellow); margin-top: 4px;">⚙️ Bannière de Moteur W (W-Engine)</div>` : ''}
       </div>
     </div>
 
@@ -571,18 +821,40 @@ function openPullDetailModal(pull) {
   const content = document.getElementById('detail-modal-content');
   if (!modal || !title || !content) return;
 
-  const isWon = !pull.isLoss;
-  title.textContent = `Tirage #${pull.id} — ${pull.agent}`;
+  const isWon = !pull.isLoss && !pull.isGuaranteedFirst;
+  const isGuaranteedDirect = Boolean(pull.isGuaranteedFirst);
+  const isEngine = pull.isEngine || pull.type === 'engine' || (pull.agent && (/\bWE$/i).test(pull.agent.trim()));
+  const typePrefix = isEngine ? 'Moteur W — ' : '';
+  title.textContent = `Tirage #${pull.id} — ${typePrefix}${pull.agent}`;
 
   let statusDetails = '';
-  if (isWon) {
+  if (isGuaranteedDirect) {
+    statusDetails = `
+      <div class="detail-card-inner">
+        <div class="detail-avatar" style="border-color: var(--guaranteed-color);">
+          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
+        </div>
+        <div class="detail-info">
+          <div class="detail-title">
+            ${pull.agent}
+            ${isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
+          </div>
+          <div style="color: var(--guaranteed-color); font-weight: 800;">★ 100% GARANTI D'OFFICE</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">1er ${isEngine ? 'Moteur W' : 'Agent'} garanti en version ${pull.patch} (Bannière Rescreen)</div>
+        </div>
+      </div>
+    `;
+  } else if (isWon) {
     statusDetails = `
       <div class="detail-card-inner">
         <div class="detail-avatar" style="border-color: var(--win-color);">
-          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" />
+          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
         </div>
         <div class="detail-info">
-          <div class="detail-title">${pull.agent}</div>
+          <div class="detail-title">
+            ${pull.agent}
+            ${isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
+          </div>
           <div style="color: var(--win-color); font-weight: 800;">✓ 50/50 GAGNÉ</div>
           <div style="font-size: 0.8rem; color: var(--text-muted);">Version : Patch ${pull.patch}</div>
         </div>
@@ -592,10 +864,13 @@ function openPullDetailModal(pull) {
     statusDetails = `
       <div class="detail-card-inner">
         <div class="detail-avatar" style="border-color: var(--loss-color);">
-          <img src="${getPortraitUrl(pull.lostAgent)}" alt="${pull.lostAgent}" />
+          <img src="${getPortraitUrl(pull.lostAgent)}" alt="${pull.lostAgent}" onerror="handleImgError(this, '${safeName(pull.lostAgent)}')" />
         </div>
         <div class="detail-info">
-          <div class="detail-title">${pull.lostAgent}</div>
+          <div class="detail-title">
+            ${pull.lostAgent}
+            ${isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
+          </div>
           <div style="color: var(--loss-color); font-weight: 800;">✗ 50/50 PERDU (Pity ${pull.lostPity})</div>
           <div style="font-size: 0.8rem; color: var(--text-muted);">Permanent obtenu</div>
         </div>
@@ -607,10 +882,13 @@ function openPullDetailModal(pull) {
 
       <div class="detail-card-inner">
         <div class="detail-avatar" style="border-color: var(--guaranteed-color);">
-          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" />
+          <img src="${getPortraitUrl(pull.agent)}" alt="${pull.agent}" onerror="handleImgError(this, '${safeName(pull.agent)}')" />
         </div>
         <div class="detail-info">
-          <div class="detail-title">${pull.agent}</div>
+          <div class="detail-title">
+            ${pull.agent}
+            ${isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
+          </div>
           <div style="color: var(--guaranteed-color); font-weight: 800;">★ GARANTI (${pull.cost} tirages)</div>
           ${pull.bannerFrom ? `<div style="font-size: 0.75rem; color: var(--zzz-yellow);">Bannière : ${pull.bannerFrom} ➔ ${pull.agent}</div>` : ''}
         </div>
@@ -646,12 +924,16 @@ function openPullDetailModal(pull) {
 }
 
 // CSV Parser robust for user uploads
-function parseCSV(text) {
+function parseCSV(text, type = 'character') {
   const lines = text.split(/\r\n|\n/);
   if (lines.length < 2) return [];
 
   const items = [];
   let currentPatch = '1.0';
+
+  // Per-patch tracking for Rescreen banners: 1st character and 1st engine guaranteed per patch
+  const seenCharsByPatch = new Set();
+  const seenEnginesByPatch = new Set();
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -705,11 +987,29 @@ function parseCSV(text) {
     const isLoss = Boolean(lostAgentRaw && lostAgentRaw.trim() !== '');
     if (total === 0) total = pull1 + pull2;
 
-    // Chronological order:
-    // When isLoss is true: pull1 is the 50/50 loss pity, pull2 is the guaranteed character pity.
-    // When isLoss is false (50/50 won): pull1 is the won character pity.
     const lostPity = isLoss ? pull1 : 0;
     const cost = isLoss ? (pull2 || pull1) : pull1;
+
+    // Detect if this pull is an engine:
+    // Either from the engine CSV, or containing the standardized 'WE' suffix
+    const isEngine = type === 'engine' || (/\bWE$/i).test(targetAgent.trim());
+
+    // Rescreen rule: in each patch where there is a rescreen banner,
+    // the 1st character and the 1st engine are 100% guaranteed.
+    let isGuaranteedFirst = false;
+    if (type === 'rescreen' && !isLoss) {
+      if (isEngine) {
+        if (!seenEnginesByPatch.has(currentPatch)) {
+          seenEnginesByPatch.add(currentPatch);
+          isGuaranteedFirst = true;
+        }
+      } else {
+        if (!seenCharsByPatch.has(currentPatch)) {
+          seenCharsByPatch.add(currentPatch);
+          isGuaranteedFirst = true;
+        }
+      }
+    }
 
     items.push({
       id: items.length + 1,
@@ -721,17 +1021,101 @@ function parseCSV(text) {
       isLoss: isLoss,
       lostAgent: isLoss ? lostAgentRaw.trim() : null,
       lostPity: lostPity,
-      total: total
+      total: total,
+      type: type,
+      isEngine: isEngine,
+      isGuaranteedFirst: isGuaranteedFirst
     });
   }
 
   return items;
 }
 
+// Switch Active Category
+function setCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-tab').forEach(t => {
+    if (t.dataset.category === cat) {
+      t.classList.add('active');
+    } else {
+      t.classList.remove('active');
+    }
+  });
+
+  const activePulls = getActivePulls();
+  updateStats(activePulls);
+  renderPulls();
+  updateCategoryBadges();
+}
+
+// Auto-fetch CSV files when served over HTTP/HTTPS (GitHub Pages, Live Server, local dev server)
+async function autoFetchCSVs() {
+  let charUpdated = false;
+  let engineUpdated = false;
+  let rescreenUpdated = false;
+
+  try {
+    const resChar = await fetch(encodeURI('ZZZ - Character History.csv') + '?v=' + Date.now());
+    if (resChar.ok) {
+      const text = await resChar.text();
+      const parsed = parseCSV(text, 'character');
+      if (parsed.length > 0) {
+        charPulls = parsed;
+        charUpdated = true;
+      }
+    }
+  } catch (err) {
+    // Normal / expected when opened directly via file:// protocol
+  }
+
+  try {
+    const resEngine = await fetch(encodeURI('ZZZ - Engine History.csv') + '?v=' + Date.now());
+    if (resEngine.ok) {
+      const text = await resEngine.text();
+      const parsed = parseCSV(text, 'engine');
+      if (parsed.length > 0) {
+        enginePulls = parsed;
+        engineUpdated = true;
+      }
+    }
+  } catch (err) {
+    // Normal / expected when opened directly via file:// protocol
+  }
+
+  try {
+    const resRescreen = await fetch(encodeURI('ZZZ - Rescreen History.csv') + '?v=' + Date.now());
+    if (resRescreen.ok) {
+      const text = await resRescreen.text();
+      const parsed = parseCSV(text, 'rescreen');
+      if (parsed.length > 0) {
+        rescreenPulls = parsed;
+        rescreenUpdated = true;
+      }
+    }
+  } catch (err) {
+    // Normal / expected when opened directly via file:// protocol
+  }
+
+  if (charUpdated || engineUpdated || rescreenUpdated) {
+    console.info(`✓ Données CSV chargées automatiquement (Personnages: ${charPulls.length}, Moteurs W: ${enginePulls.length}, Rescreen: ${rescreenPulls.length})`);
+    updateCategoryBadges();
+    setCategory(currentCategory);
+  }
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-  updateStats(currentPulls);
-  renderPulls();
+  updateCategoryBadges();
+  setCategory('character');
+  autoFetchCSVs();
+
+  // Category Tabs (Personnages / Moteurs W / Rescreen / Tous)
+  const catTabs = document.querySelectorAll('.cat-tab');
+  catTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      setCategory(tab.dataset.category);
+    });
+  });
 
   // Search input
   const searchInput = document.getElementById('search-input');
@@ -838,15 +1222,38 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleFileUpload(file) {
+    const fileName = file.name.toLowerCase();
+    let targetType = 'character';
+
+    // Auto-detect target category by file name
+    if (fileName.includes('rescreen')) {
+      targetType = 'rescreen';
+    } else if (fileName.includes('engine') || fileName.includes('moteur')) {
+      targetType = 'engine';
+    } else if (fileName.includes('character') || fileName.includes('perso')) {
+      targetType = 'character';
+    } else {
+      const checkedRadio = document.querySelector('input[name="import-target"]:checked');
+      if (checkedRadio) targetType = checkedRadio.value;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const text = e.target.result;
-        const newPulls = parseCSV(text);
+        const newPulls = parseCSV(text, targetType);
         if (newPulls.length > 0) {
-          currentPulls = newPulls;
-          updateStats(currentPulls);
-          renderPulls();
+          if (targetType === 'engine') {
+            enginePulls = newPulls;
+            setCategory('engine');
+          } else if (targetType === 'rescreen') {
+            rescreenPulls = newPulls;
+            setCategory('rescreen');
+          } else {
+            charPulls = newPulls;
+            setCategory('character');
+          }
+          updateCategoryBadges();
           if (modal) modal.classList.remove('active');
         } else {
           alert('Impossible de trouver des lignes de tirages valides dans ce fichier CSV.');
