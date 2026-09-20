@@ -1,6 +1,6 @@
 /* ==========================================================================
    ZZZ 50/50 TRACKER (rng.moe style) - STYLESHEET
-   Pure Square Grid Design (Grille de carrés avec image en fond)
+   Pure Square Grid & Detailed Cards Design
    ========================================================================== */
 
 :root {
@@ -17,7 +17,7 @@
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
   
-  /* ZZZ & Gacha Colors - WIN IS YELLOW (#f8e119) */
+  /* ZZZ & Gacha Colors (Win is Yellow) */
   --zzz-yellow: #f8e119;
   --zzz-yellow-glow: rgba(248, 225, 25, 0.35);
   
@@ -34,6 +34,7 @@
   --guaranteed-color: #3b82f6;
   --guaranteed-bg: rgba(59, 130, 246, 0.16);
   --guaranteed-border: #3b82f6;
+  --guaranteed-glow: rgba(59, 130, 246, 0.4);
 
   --pity-early: #10b981;
   --pity-mid: #fbbf24;
@@ -67,14 +68,11 @@ body {
   overflow-x: hidden;
 }
 
-/* Background grid effect */
+/* Background ambient grid */
 body::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: 
     radial-gradient(circle at 10% 10%, rgba(248, 225, 25, 0.04) 0%, transparent 40%),
     radial-gradient(circle at 90% 90%, rgba(239, 68, 68, 0.03) 0%, transparent 40%),
@@ -94,9 +92,8 @@ body::before {
 }
 
 /* ==========================================================================
-   HEADER
+   HEADER & ACTIONS
    ========================================================================== */
-
 header {
   display: flex;
   justify-content: space-between;
@@ -219,9 +216,8 @@ header {
 }
 
 /* ==========================================================================
-   CATEGORY NAVIGATION (Personnages / Moteurs W / Tous)
+   CATEGORY NAVIGATION
    ========================================================================== */
-
 .category-nav {
   display: flex;
   align-items: center;
@@ -235,6 +231,7 @@ header {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .cat-tab {
@@ -265,37 +262,18 @@ header {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.cat-tab[data-category="character"].active {
-  border-color: rgba(248, 225, 25, 0.4);
-}
+.cat-tab[data-category="character"].active { border-color: rgba(248, 225, 25, 0.4); }
+.cat-tab[data-category="character"].active .cat-icon { filter: drop-shadow(0 0 6px rgba(248, 225, 25, 0.6)); }
 
-.cat-tab[data-category="character"].active .cat-icon {
-  filter: drop-shadow(0 0 6px rgba(248, 225, 25, 0.6));
-}
+.cat-tab[data-category="engine"].active { border-color: rgba(59, 130, 246, 0.4); }
+.cat-tab[data-category="engine"].active .cat-icon { filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6)); }
 
-.cat-tab[data-category="engine"].active {
-  border-color: rgba(59, 130, 246, 0.4);
-}
+.cat-tab[data-category="rescreen"].active { border-color: rgba(45, 212, 191, 0.4); }
+.cat-tab[data-category="rescreen"].active .cat-icon { filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.6)); }
 
-.cat-tab[data-category="engine"].active .cat-icon {
-  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
-}
+.cat-tab[data-category="all"].active { border-color: rgba(168, 85, 247, 0.4); }
 
-.cat-tab[data-category="rescreen"].active {
-  border-color: rgba(45, 212, 191, 0.4);
-}
-
-.cat-tab[data-category="rescreen"].active .cat-icon {
-  filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.6));
-}
-
-.cat-tab[data-category="all"].active {
-  border-color: rgba(168, 85, 247, 0.4);
-}
-
-.cat-tab .cat-icon {
-  font-size: 1.05rem;
-}
+.cat-tab .cat-icon { font-size: 1.05rem; }
 
 .cat-badge {
   font-size: 0.72rem;
@@ -309,34 +287,14 @@ header {
   transition: all 0.2s ease;
 }
 
-.cat-tab.active .cat-badge {
-  background-color: var(--zzz-yellow);
-  color: #000;
-  border-color: var(--zzz-yellow);
-}
-
-.cat-tab[data-category="engine"].active .cat-badge {
-  background-color: #60a5fa;
-  color: #000;
-  border-color: #60a5fa;
-}
-
-.cat-tab[data-category="rescreen"].active .cat-badge {
-  background-color: #2dd4bf;
-  color: #000;
-  border-color: #2dd4bf;
-}
-
-.cat-tab[data-category="all"].active .cat-badge {
-  background-color: #c084fc;
-  color: #000;
-  border-color: #c084fc;
-}
+.cat-tab.active .cat-badge { background-color: var(--zzz-yellow); color: #000; border-color: var(--zzz-yellow); }
+.cat-tab[data-category="engine"].active .cat-badge { background-color: #60a5fa; color: #000; border-color: #60a5fa; }
+.cat-tab[data-category="rescreen"].active .cat-badge { background-color: #2dd4bf; color: #000; border-color: #2dd4bf; }
+.cat-tab[data-category="all"].active .cat-badge { background-color: #c084fc; color: #000; border-color: #c084fc; }
 
 /* ==========================================================================
    STATISTICS DASHBOARD
    ========================================================================== */
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -393,9 +351,7 @@ header {
   color: var(--text-secondary);
 }
 
-.stat-icon {
-  font-size: 0.95rem;
-}
+.stat-icon { font-size: 0.95rem; }
 
 .stat-value-container {
   display: flex;
@@ -418,14 +374,10 @@ header {
   line-height: 1.2;
 }
 
-.stat-highlight {
-  font-weight: 700;
-}
-
+.stat-highlight { font-weight: 700; }
 .stat-highlight.win { color: var(--win-color); }
 .stat-highlight.loss { color: var(--loss-color); }
 
-/* Progress bar in win rate */
 .progress-bar-container {
   width: 100%;
   height: 3px;
@@ -448,9 +400,8 @@ header {
 }
 
 /* ==========================================================================
-   STANDARD CHARACTERS LOSS DISTRIBUTION
+   LOSS DISTRIBUTION SECTION
    ========================================================================== */
-
 .losses-section {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
@@ -525,7 +476,6 @@ header {
 /* ==========================================================================
    FILTER & SEARCH BAR
    ========================================================================== */
-
 .filter-bar {
   display: flex;
   justify-content: space-between;
@@ -645,9 +595,8 @@ header {
 }
 
 /* ==========================================================================
-   VIEW 1: GRILLE DE CARRÉS PURS (IMAGE EN BACKGROUND, INFOS AU DESSUS)
+   VIEW 1: GRILLE DE CARRES PURS (RNG.MOE STYLE)
    ========================================================================== */
-
 .pulls-grid-matrix {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -655,7 +604,6 @@ header {
   width: 100%;
 }
 
-/* VRAIMENT CARRÉ : aspect-ratio: 1 / 1, pas de section dessous ! */
 .matrix-tile {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -678,31 +626,15 @@ header {
   z-index: 5;
 }
 
-/* WIN EN JAUNE ! */
-.matrix-tile.is-won {
-  border-color: var(--win-border);
-}
-.matrix-tile.is-won:hover {
-  box-shadow: 0 8px 24px var(--win-glow);
-}
+.matrix-tile.is-won { border-color: var(--win-border); }
+.matrix-tile.is-won:hover { box-shadow: 0 8px 24px var(--win-glow); }
 
-/* LOSS EN ROUGE ! */
-.matrix-tile.is-lost {
-  border-color: var(--loss-border);
-}
-.matrix-tile.is-lost:hover {
-  box-shadow: 0 8px 24px var(--loss-glow);
-}
+.matrix-tile.is-lost { border-color: var(--loss-border); }
+.matrix-tile.is-lost:hover { box-shadow: 0 8px 24px var(--loss-glow); }
 
-/* GUARANTEED EN BLEU ! */
-.matrix-tile.is-guaranteed {
-  border-color: var(--guaranteed-color);
-}
-.matrix-tile.is-guaranteed:hover {
-  box-shadow: 0 8px 24px var(--guaranteed-glow);
-}
+.matrix-tile.is-guaranteed { border-color: var(--guaranteed-color); }
+.matrix-tile.is-guaranteed:hover { box-shadow: 0 8px 24px var(--guaranteed-glow); }
 
-/* L'image est en background total derrière tout le reste */
 .matrix-img {
   position: absolute;
   top: 0;
@@ -714,17 +646,8 @@ header {
   transition: transform 0.35s ease;
 }
 
-.matrix-tile:hover .matrix-img {
-  transform: scale(1.1);
-}
+.matrix-tile:hover .matrix-img { transform: scale(1.1); }
 
-/* Dégradés supprimés : l'image reste 100% lumineuse et visible */
-.matrix-overlay-top,
-.matrix-overlay-bottom {
-  display: none;
-}
-
-/* En-tête supérieur au dessus de l'image */
 .matrix-top-bar {
   position: relative;
   z-index: 2;
@@ -756,7 +679,6 @@ header {
   backdrop-filter: blur(4px);
 }
 
-/* Barre inférieure : W/L + chiffre à gauche, vignette perte en bas à droite */
 .matrix-bottom-bar {
   position: relative;
   z-index: 2;
@@ -767,7 +689,6 @@ header {
   width: 100%;
 }
 
-/* Badge combiné W/L + chiffre de pity */
 .matrix-badge-combined {
   display: inline-flex;
   align-items: center;
@@ -779,13 +700,9 @@ header {
   border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.matrix-badge-combined.win {
-  border-color: rgba(248, 225, 25, 0.45);
-}
-
-.matrix-badge-combined.loss {
-  border-color: rgba(239, 68, 68, 0.45);
-}
+.matrix-badge-combined.win { border-color: rgba(248, 225, 25, 0.45); }
+.matrix-badge-combined.loss { border-color: rgba(239, 68, 68, 0.45); }
+.matrix-badge-combined.guaranteed { border-color: rgba(59, 130, 246, 0.5); }
 
 .matrix-tag-letter {
   font-size: 0.75rem;
@@ -809,6 +726,12 @@ header {
   box-shadow: 0 0 8px var(--loss-glow);
 }
 
+.matrix-badge-combined.guaranteed .matrix-tag-letter {
+  background-color: var(--guaranteed-color);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
 .matrix-pity-num {
   font-size: 0.80rem;
   font-weight: 800;
@@ -816,68 +739,12 @@ header {
   color: #fff;
 }
 
-.matrix-badge-combined.win .matrix-pity-num {
-  color: var(--win-color);
-}
-
-.matrix-badge-combined.loss .matrix-pity-num {
-  color: #fff;
-}
-
-.matrix-badge-combined.guaranteed {
-  border-color: rgba(59, 130, 246, 0.5);
-}
-
-.matrix-badge-combined.guaranteed .matrix-tag-letter {
-  background-color: var(--guaranteed-color);
-  color: #fff;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
-}
-
-.matrix-badge-combined.guaranteed .matrix-pity-num {
-  color: #93c5fd;
-}
-
-/* Vignette standard pour perte 50/50 - EN BAS À DROITE (agrandie) */
-.matrix-loss-inset {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 3px solid var(--loss-color);
-  overflow: hidden;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 10px rgba(239, 68, 68, 0.35);
-  background: #000;
-  flex-shrink: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  margin-left: auto;
-}
-
-.matrix-tile:hover .matrix-loss-inset {
-  transform: scale(1.12);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 1), 0 0 14px var(--loss-glow);
-}
-
-.matrix-loss-inset img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.matrix-pity-tag.win {
-  color: var(--win-color);
-  border-color: rgba(248, 225, 25, 0.4);
-}
-
-.matrix-pity-tag.loss {
-  color: var(--loss-color);
-  border-color: rgba(239, 68, 68, 0.4);
-}
+.matrix-badge-combined.win .matrix-pity-num { color: var(--win-color); }
+.matrix-badge-combined.guaranteed .matrix-pity-num { color: #93c5fd; }
 
 /* ==========================================================================
-   VIEW 2: CARTES DÉTAILLÉES (LIST VIEW)
+   VIEW 2: CARTES DETAILLEES (LIST VIEW)
    ========================================================================== */
-
 .pulls-container {
   display: flex;
   flex-direction: column;
@@ -906,17 +773,9 @@ header {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
-.pull-card.card-win {
-  border-left: 4px solid var(--win-color);
-}
-
-.pull-card.card-loss {
-  border-left: 4px solid var(--loss-color);
-}
-
-.pull-card.card-guaranteed {
-  border-left: 4px solid var(--guaranteed-color);
-}
+.pull-card.card-win { border-left: 4px solid var(--win-color); }
+.pull-card.card-loss { border-left: 4px solid var(--loss-color); }
+.pull-card.card-guaranteed { border-left: 4px solid var(--guaranteed-color); }
 
 .pull-meta {
   display: flex;
@@ -978,9 +837,7 @@ header {
   transition: transform 0.3s ease;
 }
 
-.pull-card:hover .portrait-img {
-  transform: scale(1.08);
-}
+.pull-card:hover .portrait-img { transform: scale(1.08); }
 
 .rank-badge {
   position: absolute;
@@ -1106,7 +963,6 @@ header {
   font-size: 0.9rem;
 }
 
-/* Empty state */
 .empty-state {
   grid-column: 1 / -1;
   text-align: center;
@@ -1118,16 +974,12 @@ header {
 }
 
 /* ==========================================================================
-   DETAIL MODAL
+   MODALES (DETAIL & IMPORT CSV)
    ========================================================================== */
-
 .modal-backdrop {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(6px);
   z-index: 100;
@@ -1136,9 +988,7 @@ header {
   padding: 20px;
 }
 
-.modal-backdrop.active {
-  display: flex;
-}
+.modal-backdrop.active { display: flex; }
 
 .modal-box {
   background-color: var(--bg-secondary);
@@ -1178,11 +1028,8 @@ header {
   padding: 4px;
 }
 
-.modal-close:hover {
-  color: var(--text-primary);
-}
+.modal-close:hover { color: var(--text-primary); }
 
-/* Card & modal WE badges */
 .badge-we {
   display: inline-flex;
   align-items: center;
@@ -1199,9 +1046,7 @@ header {
   vertical-align: middle;
 }
 
-.import-category-selector {
-  margin-bottom: 16px;
-}
+.import-category-selector { margin-bottom: 16px; }
 
 .import-cat-title {
   display: block;
@@ -1216,6 +1061,7 @@ header {
 .import-cat-options {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .import-radio-label {
@@ -1238,9 +1084,7 @@ header {
   color: var(--text-primary);
 }
 
-.import-radio-label input[type="radio"] {
-  accent-color: var(--zzz-yellow);
-}
+.import-radio-label input[type="radio"] { accent-color: var(--zzz-yellow); }
 
 .import-radio-label:has(input[type="radio"]:checked) {
   border-color: var(--zzz-yellow);
@@ -1281,7 +1125,6 @@ header {
   color: var(--text-muted);
 }
 
-/* Detail modal inside */
 .detail-card-inner {
   display: flex;
   gap: 16px;
@@ -1347,7 +1190,6 @@ header {
 /* ==========================================================================
    FOOTER
    ========================================================================== */
-
 footer {
   margin-top: 50px;
   padding-top: 24px;
@@ -1366,14 +1208,11 @@ footer a {
   text-decoration: none;
 }
 
-footer a:hover {
-  text-decoration: underline;
-}
+footer a:hover { text-decoration: underline; }
 
 /* ==========================================================================
-   RESPONSIVE
+   RESPONSIVE MEDIA QUERIES
    ========================================================================== */
-
 @media (max-width: 1100px) {
   .pulls-grid-matrix {
     grid-template-columns: repeat(6, 1fr);
