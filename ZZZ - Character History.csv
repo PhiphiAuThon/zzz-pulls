@@ -1,7 +1,7 @@
-Patch,Agent,Cost,,Total,Multi,50/50 L Agent,50/50 L,Pity Tries,Average spendings,cost estimation,"173,8571429"
+Patch,Agent,Cost,,Total,Multi,50/50 L Agent,50/50 L,Pity Tries,Average spendings,cost estimation,"260,7857143"
 "1,0",Ellen,80,10,90,9,Koleda,11,39,"86,92857143",Sunbringer,1
 ,Zhu Yuan,70,,70,7,,50/50 W,7-8 Multi cost,Median spendings,Cecilia,1
-"1,1",Jane,80,80,160,16,Grace,17,24,80,,
+"1,1",Jane,80,80,160,16,Grace,17,24,80,Kafka,1
 "1,2",Burnice,80,73,153,16,Soldier 11,W/L Ratio,,,,
 "1,3 -> 1,4",Lighter -> Miyabi,20,75,95,10,Nekomata,"1,545454545",Approximated spendings are greyed,,,
 "1,5",Astra,30,80,110,11,Lycaon,,,,,
@@ -27,7 +27,7 @@ Patch,Agent,Cost,,Total,Multi,50/50 L Agent,50/50 L,Pity Tries,Average spendings
 ,Remielle,70,,70,7,,,,,,
 ,Sigrid,30,,30,3,,,,,,
 "3,2",Promeia,80,60,140,14,Zhu Yuan,,,,,
-,,,,,0,,,,,,
+"3,4",,,,,0,,,,,,
 ,,,,,0,,,,,,
 ,,,,,0,,,,,,
 ,,,,,0,,,,,,
