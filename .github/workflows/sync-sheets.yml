@@ -1,0 +1,33 @@
+name: Sync Google Sheets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Sheets CSV
+        run: |
+          BASE_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vSy59G16rYcje0aKIoC0cU9Wrj8ZMjw9LyVjhVTzYzr_0pSNhFjwK4XJ7v3So34W9_LsHRwZ-I9Z9u1/pub?output=csv"
+          curl -sSL "${BASE_URL}&gid=2111254719" -o "ZZZ - Character History.csv"
+          curl -sSL "${BASE_URL}&gid=2008970185" -o "ZZZ - Engine History.csv"
+          curl -sSL "${BASE_URL}&gid=1513022122" -o "ZZZ - Rescreen History.csv"
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "ZZZ - Character History.csv" "ZZZ - Engine History.csv" "ZZZ - Rescreen History.csv"
+          if git diff --staged --quiet; then
+            echo "Aucune modification à commiter."
+          else
+            git commit -m "chore: sync pull history from Google Sheets"
+            git push
+          fi
