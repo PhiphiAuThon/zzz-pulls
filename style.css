@@ -403,6 +403,7 @@ header {
    LOSS DISTRIBUTION SECTION
    ========================================================================== */
 .losses-section {
+  display: none;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -609,7 +610,7 @@ header {
   aspect-ratio: 1 / 1;
   width: 100%;
   border-radius: 50%;
-  overflow: hidden;
+  overflow: visible;
   background-color: #10121a;
   border: 2px solid var(--border-subtle);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
@@ -642,11 +643,9 @@ header {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: 0;
-  transition: transform 0.35s ease;
+  border-radius: 50%;
+  z-index: 1;
 }
-
-.matrix-tile:hover .matrix-img { transform: scale(1.1); }
 
 .matrix-top-bar {
   display: none;
@@ -661,39 +660,40 @@ header {
 }
 
 .matrix-bottom-bar {
-  position: relative;
-  z-index: 2;
-  padding: 0 0 10px 12px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .matrix-badge-combined {
-  display: inline-flex;
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  min-width: 28px;
+  border: 2px solid #10121a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .matrix-badge-combined.win {
   background-color: var(--win-color);
-  border-color: rgba(0, 0, 0, 0.3);
 }
 
 .matrix-badge-combined.loss {
   background-color: var(--loss-color);
-  border-color: rgba(0, 0, 0, 0.3);
 }
 
 .matrix-badge-combined.guaranteed {
   background-color: var(--guaranteed-color);
-  border-color: rgba(0, 0, 0, 0.3);
 }
 
 .matrix-tag-letter {
@@ -701,10 +701,11 @@ header {
 }
 
 .matrix-pity-num {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 900;
   font-family: var(--font-mono);
   line-height: 1;
+  text-align: center;
 }
 
 .matrix-badge-combined.win .matrix-pity-num { color: #000; }
