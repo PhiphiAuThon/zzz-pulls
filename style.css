@@ -279,6 +279,11 @@ body::before {
   font-weight: 800;
   color: #8e95a5;
   margin-bottom: 4px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .currency-value {
@@ -294,7 +299,7 @@ body::before {
 }
 
 .currency-sub {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #71788e;
 }

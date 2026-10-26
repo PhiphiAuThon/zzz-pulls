@@ -467,7 +467,7 @@ function computeStats(pulls, sRankItems) {
     total5050,
     winRate,
     avgPitySRank,
-    streak: { currentStreak, maxWinStreak, hasFiftyFifty: fiftyFiftyPulls.length > 0 }
+    streak: { currentStreak, maxWinStreak, isCurrentWin, hasFiftyFifty: fiftyFiftyPulls.length > 0 }
   };
 }
 
@@ -710,6 +710,14 @@ function updateStatsUI(pulls, sRanks) {
   const streakEl = document.getElementById('stat-streak');
   if (streakEl) {
     streakEl.textContent = stats.streak.hasFiftyFifty ? `${stats.streak.currentStreak}/${stats.streak.maxWinStreak || 0}` : '0/0';
+  }
+  const streakTypeEl = document.getElementById('stat-streak-type');
+  if (streakTypeEl) {
+    if (stats.streak.hasFiftyFifty && stats.streak.currentStreak > 0) {
+      streakTypeEl.textContent = `(${stats.streak.isCurrentWin ? 'W' : 'L'})`;
+    } else {
+      streakTypeEl.textContent = '';
+    }
   }
 
   // Totaux & Moyennes
