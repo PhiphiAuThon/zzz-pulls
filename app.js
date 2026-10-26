@@ -505,8 +505,8 @@ function filterAndSortEntries(entries, { filter, search, sort, isMatrix }) {
   });
 
   filtered.sort((a, b) => {
-    const costA = isMatrix ? a.pity : a.total;
-    const costB = isMatrix ? b.pity : b.total;
+    const costA = a.pity !== undefined ? a.pity : a.total;
+    const costB = b.pity !== undefined ? b.pity : b.total;
     if (sort === 'newest') return b.id - a.id;
     if (sort === 'oldest') return a.id - b.id;
     if (sort === 'pity-high') return costB - costA;
@@ -540,101 +540,68 @@ function renderMatrixTile(item) {
   `;
 }
 
-function renderPullCard(pull) {
-  const status = getItemStatus(pull);
-  const isEngine = isEnginePull(pull);
+function renderPullCard(item) {
+  const status = getItemStatus(item);
+  const isEngine = isEnginePull(item);
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
-  let contentHtml = '';
+  const portraitUrl = getPortraitUrl(item.agent, isEngine);
 
+  let statusBadgeText = '50/50 GAGNÉ';
   if (status === 'loss') {
-    contentHtml = `
-      <div class="pull-bays-wrapper loss-flow">
-        <div class="pull-agent-bay">
-          <div class="bay-portrait-frame" data-status="loss">
-            <img class="bay-img" src="${getPortraitUrl(pull.lostAgent, isEngine)}" alt="${pull.lostAgent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.lostAgent)}', ${isEngine})" />
-          </div>
-          <div class="bay-info">
-            <span class="bay-name">${pull.lostAgent} ${engineBadge}</span>
-            <span class="bay-pity-inline">${pull.lostPity}</span>
-          </div>
-        </div>
-
-        <div class="pull-chevron-arrow">
-          <span class="chevron-icons">❯❯❯</span>
-        </div>
-
-        <div class="pull-agent-bay">
-          <div class="bay-portrait-frame" data-status="guaranteed">
-            <img class="bay-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
-          </div>
-          <div class="bay-info">
-            <span class="bay-name">${pull.agent} ${engineBadge}</span>
-            <span class="bay-pity-inline">${pull.cost}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  } else {
-    contentHtml = `
-      <div class="pull-bays-wrapper single-flow">
-        <div class="pull-agent-bay">
-          <div class="bay-portrait-frame" data-status="${status}">
-            <img class="bay-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
-          </div>
-          <div class="bay-info">
-            <span class="bay-name">${pull.agent} ${engineBadge}</span>
-            <span class="bay-pity-inline">${pull.cost}</span>
-          </div>
-        </div>
-      </div>
-    `;
+    const target = item.targetAgent ? ` (Bannière ${item.targetAgent})` : '';
+    statusBadgeText = `50/50 PERDU${target}`;
+  } else if (status === 'guaranteed') {
+    statusBadgeText = item.isRescreenFirst ? 'GARANTI (RESCREEN)' : 'GARANTI';
   }
 
+  const patchText = item.patch ? `<span class="pull-card-patch">v${item.patch}</span>` : '';
+
   return `
-    <div class="pull-card" data-status="${status}" data-pull-id="${pull.id}">
-      <div class="pull-index-cartridge">
-        <span class="pull-index-num">#${pull.id}</span>
+    <div class="pull-card" data-status="${status}" data-item-id="${item.id}" data-pull-id="${item.pullId || item.id}">
+      <div class="pull-card-banner">
+        <img class="pull-banner-img ${isEngine ? 'is-engine' : ''}" src="${portraitUrl}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />
+        <div class="pull-banner-overlay"></div>
       </div>
-      <div class="pull-content">${contentHtml}</div>
+      <div class="pull-card-main">
+        <div class="pull-index-cartridge">
+          <span class="pull-index-num">#${item.id}</span>
+        </div>
+        <div class="pull-card-row">
+          <span class="pull-card-name">${item.agent}</span>
+          ${engineBadge}
+          <span class="status-badge" data-status="${status}">${statusBadgeText}</span>
+          ${patchText}
+        </div>
+      </div>
       <div class="pull-total-capsule">
-        ${pull.total} Tirages
+        ${item.pity} Tirages
       </div>
     </div>
   `;
 }
 
-function openDetailModal(entity, isSRankItem) {
+function openDetailModal(entity) {
   const modal = document.getElementById('detail-modal');
   const titleEl = document.getElementById('detail-modal-title');
   const contentEl = document.getElementById('detail-modal-content');
   if (!modal || !titleEl || !contentEl) return;
 
-  const isEngine = isEnginePull(entity);
+  const activePulls = getActivePulls();
+  const parentPull = activePulls.find(p => p.id === (entity.pullId || entity.id)) || entity;
+  const isEngine = isEnginePull(entity) || isEnginePull(parentPull);
   const typePrefix = isEngine ? 'Moteur W — ' : '';
+  const displayId = parentPull.id || entity.pullId || entity.id;
+
   titleEl.innerHTML = `
     <div class="modal-header-top">
-      <span class="modal-title-main">TIRAGE #${entity.id} — ${typePrefix}${entity.agent}</span>
+      <span class="modal-title-main">TIRAGE #${displayId} — ${typePrefix}${parentPull.agent || entity.agent}</span>
     </div>
-    <div class="modal-tab-capsule">Tirage #${entity.id}</div>
+    <div class="modal-tab-capsule">Tirage #${displayId}</div>
   `;
 
   const status = getItemStatus(entity);
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
-  const costPulls = isSRankItem ? entity.pity : entity.total;
-  const totalPulls = entity.totalCycle || entity.total || entity.pity;
-
-  let statusLabel = '50/50 Gagné';
-  let statusDetail = '50/50 GAGNÉ';
-
-  if (status === 'loss') {
-    statusLabel = '50/50 Perdu';
-    statusDetail = `50/50 PERDU (Pity ${entity.lostPity || entity.pity})`;
-  } else if (status === 'guaranteed') {
-    statusLabel = entity.isRescreenFirst ? 'Garanti (Rescreen)' : 'Garanti';
-    statusDetail = entity.isRescreenFirst
-      ? `★ 100% GARANTI (Rescreen v${entity.patch})`
-      : `★ GARANTI (${costPulls} tirages)`;
-  }
+  const isLossCycle = Boolean(parentPull.isLoss);
 
   const renderAgentBox = (agentName, itemStatus, descText) => `
     <div class="detail-agent-box" data-status="${itemStatus}">
@@ -644,43 +611,67 @@ function openDetailModal(entity, isSRankItem) {
       <div class="detail-agent-meta">
         <div class="detail-agent-name">${agentName} ${engineBadge}</div>
         <div class="detail-status-pill" data-status="${itemStatus}">${descText}</div>
-        <div class="detail-agent-patch">Patch : v${entity.patch}</div>
+        <div class="detail-agent-patch">Patch : v${parentPull.patch || entity.patch}</div>
       </div>
     </div>
   `;
 
   let agentSectionHtml = '';
-  if (!isSRankItem && entity.isLoss) {
+  let statusLabel = '50/50 Gagné';
+
+  if (isLossCycle) {
+    statusLabel = '50/50 Perdu + Garanti';
     agentSectionHtml = `
       <div class="detail-bays-grid">
-        ${renderAgentBox(entity.lostAgent, 'loss', `✗ 50/50 PERDU (Pity ${entity.lostPity})`)}
-        ${renderAgentBox(entity.agent, 'guaranteed', `★ GARANTI (${entity.cost} tirages)`)}
+        ${renderAgentBox(parentPull.lostAgent, 'loss', `✗ 50/50 PERDU (Pity ${parentPull.lostPity})`)}
+        ${renderAgentBox(parentPull.agent, 'guaranteed', `★ GARANTI (${parentPull.cost} tirages)`)}
       </div>
       <div class="detail-arrow-banner">➔ Rang S Garanti :</div>
     `;
   } else {
+    let statusDetail = '50/50 GAGNÉ';
+    if (status === 'guaranteed') {
+      statusLabel = entity.isRescreenFirst || parentPull.isGuaranteedFirst ? 'Garanti (Rescreen)' : 'Garanti';
+      statusDetail = (entity.isRescreenFirst || parentPull.isGuaranteedFirst)
+        ? `★ 100% GARANTI (Rescreen v${parentPull.patch || entity.patch})`
+        : `★ GARANTI (${parentPull.cost || entity.pity} tirages)`;
+    }
     agentSectionHtml = `
       <div class="detail-bays-single">
-        ${renderAgentBox(entity.agent, status, statusDetail)}
+        ${renderAgentBox(parentPull.agent || entity.agent, status, statusDetail)}
       </div>
     `;
   }
+
+  const totalCost = isLossCycle ? parentPull.total : (parentPull.cost || entity.pity);
+  const individualPity = entity.pity !== undefined ? entity.pity : totalCost;
 
   contentEl.innerHTML = `
     <div class="detail-console-interior">
       ${agentSectionHtml}
       <div class="detail-stats-grid">
-        <div class="detail-stat-item">
-          <span class="detail-stat-label">${isSRankItem ? 'Pity du tirage' : 'Total du cycle'}</span>
-          <span class="detail-stat-val">${costPulls} tirages</span>
-        </div>
+        ${isLossCycle ? `
+          <div class="detail-stat-item">
+            <span class="detail-stat-label">Pity sélectionnée</span>
+            <span class="detail-stat-val">${individualPity} tirages</span>
+          </div>
+          <div class="detail-stat-item">
+            <span class="detail-stat-label">Total du cycle</span>
+            <span class="detail-stat-val">${totalCost} tirages</span>
+          </div>
+        ` : `
+          <div class="detail-stat-item">
+            <span class="detail-stat-label">Pity du tirage</span>
+            <span class="detail-stat-val">${totalCost} tirages</span>
+          </div>
+          <div class="detail-stat-item">
+            <span class="detail-stat-label">Total du cycle</span>
+            <span class="detail-stat-val">${totalCost} tirages</span>
+          </div>
+        `}
         <div class="detail-stat-item">
           <span class="detail-stat-label">Coût polychromes</span>
-          <span class="detail-stat-val">${(costPulls * 160).toLocaleString()}</span>
-        </div>
-        <div class="detail-stat-item">
-          <span class="detail-stat-label">${isSRankItem ? 'Total du cycle' : 'Patch'}</span>
-          <span class="detail-stat-val">${isSRankItem ? `${totalPulls} tirages` : `v${entity.patch}`}</span>
+          <span class="detail-stat-val">${(totalCost * 160).toLocaleString()}</span>
         </div>
         <div class="detail-stat-item">
           <span class="detail-stat-label">Statut</span>
@@ -754,7 +745,7 @@ function renderPullsUI() {
 
   const activePulls = getActivePulls();
   const isMatrix = state.view === 'matrix';
-  const sourceItems = isMatrix ? expandPullsToSRanks(activePulls) : activePulls;
+  const sourceItems = expandPullsToSRanks(activePulls);
 
   const filtered = filterAndSortEntries(sourceItems, {
     filter: state.filter,
@@ -776,17 +767,17 @@ function renderPullsUI() {
       el.addEventListener('click', () => {
         const id = parseInt(el.dataset.itemId, 10);
         const item = sourceItems.find(i => i.id === id);
-        if (item) openDetailModal(item, true);
+        if (item) openDetailModal(item);
       });
     });
   } else {
     container.className = 'pulls-container';
-    container.innerHTML = filtered.map(pull => renderPullCard(pull)).join('');
-    container.querySelectorAll('[data-pull-id]').forEach(el => {
+    container.innerHTML = filtered.map(item => renderPullCard(item)).join('');
+    container.querySelectorAll('[data-item-id]').forEach(el => {
       el.addEventListener('click', () => {
-        const id = parseInt(el.dataset.pullId, 10);
-        const pull = activePulls.find(p => p.id === id);
-        if (pull) openDetailModal(pull, false);
+        const id = parseInt(el.dataset.itemId, 10);
+        const item = sourceItems.find(i => i.id === id);
+        if (item) openDetailModal(item);
       });
     });
   }
