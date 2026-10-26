@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800&family=Chakra+Petch:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=32" />
+  <link rel="stylesheet" href="style.css?v=37" />
 </head>
 <body>
   <div class="container">
@@ -38,12 +38,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m22 12-4 0"/><path d="m6 12-4 0"/><path d="m12 6 0-4"/><path d="m12 22 0-4"/><circle cx="12" cy="12" r="2"/></svg>
         </div>
-        <div class="currency-value">
-          <span id="stat-winrate">—</span>
-        </div>
         <div class="currency-info">
           <span class="currency-label">50/50 Winrate</span>
           <span class="currency-sub">(<span id="stat-win-count">0</span>W / <span id="stat-loss-count">0</span>L)</span>
+        </div>
+        <div class="currency-value">
+          <span id="stat-winrate">—</span>
         </div>
       </div>
 
@@ -51,12 +51,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
         </div>
-        <div class="currency-value">
-          <span id="stat-streak">—</span>
-        </div>
         <div class="currency-info">
           <span class="currency-label">Streak</span>
           <span id="stat-streak-records" class="currency-sub"></span>
+        </div>
+        <div class="currency-value">
+          <span id="stat-streak">—</span>
         </div>
       </div>
 
@@ -64,12 +64,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
         </div>
-        <div class="currency-value">
-          <span id="stat-avg-srank">—</span>
-        </div>
         <div class="currency-info">
           <span class="currency-label">Average Pity</span>
           <span class="currency-sub">(<span id="stat-srank-count">0</span> S-Rank)</span>
+        </div>
+        <div class="currency-value">
+          <span id="stat-avg-srank">—</span>
         </div>
       </div>
 
@@ -77,12 +77,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
         </div>
-        <div class="currency-value">
-          <span id="stat-total-pulls">—</span>
-        </div>
         <div class="currency-info">
           <span class="currency-label">Total Pulls</span>
           <span class="currency-sub">(<span id="stat-poly-count">0</span> Poly)</span>
+        </div>
+        <div class="currency-value">
+          <span id="stat-total-pulls">—</span>
         </div>
       </div>
     </section>
@@ -91,10 +91,10 @@
     <div class="filter-bar">
       <!-- Filter pills (Left) -->
       <div class="filter-pills">
-        <button class="filter-pill active" data-filter="all">Tous</button>
-        <button class="filter-pill" data-filter="win" data-status="win">50/50 Gagnés</button>
-        <button class="filter-pill" data-filter="loss" data-status="loss">50/50 Perdus</button>
-        <button class="filter-pill" data-filter="guaranteed" data-status="guaranteed">Garantis</button>
+        <button class="filter-pill active" data-filter="all">Tous <span class="filter-count"></span></button>
+        <button class="filter-pill" data-filter="win" data-status="win">50/50 Gagnés <span class="filter-count"></span></button>
+        <button class="filter-pill" data-filter="loss" data-status="loss">50/50 Perdus <span class="filter-count"></span></button>
+        <button class="filter-pill" data-filter="guaranteed" data-status="guaranteed">Garantis <span class="filter-count"></span></button>
       </div>
 
       <!-- Search input (Center) -->
@@ -127,7 +127,9 @@
     <div class="modal-box">
       <div class="modal-header">
         <h3 id="detail-modal-title" class="modal-title">Détails du Tirage</h3>
-        <button id="detail-modal-close" class="modal-close" aria-label="Fermer">✕</button>
+        <button id="detail-modal-close" class="modal-close" aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <div id="detail-modal-content">
         <!-- Filled by JS -->
@@ -139,28 +141,34 @@
   <div id="upload-modal" class="modal-backdrop">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 class="modal-title">Importer un fichier CSV</h3>
-        <button id="modal-close-btn" class="modal-close" aria-label="Fermer">✕</button>
+        <h3 class="modal-title"><span class="modal-title-main">Importer un fichier CSV</span></h3>
+        <button id="modal-close-btn" class="modal-close" aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       
-      <div class="import-category-selector">
-        <label class="import-cat-title">Destination des données :</label>
-        <div id="import-cat-options" class="import-cat-options">
-          <!-- Rendered dynamically by app.js from CATEGORIES -->
+      <div class="detail-console-interior">
+        <div class="import-category-selector">
+          <label class="import-cat-title">Destination des données</label>
+          <div id="import-cat-options" class="import-cat-options">
+            <!-- Rendered dynamically by app.js from CATEGORIES -->
+          </div>
         </div>
+
+        <div id="upload-zone" class="upload-zone">
+          <div class="upload-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="upload-text">Glissez & déposez votre fichier CSV ici</div>
+          <div class="upload-subtext">ou cliquez pour sélectionner un fichier</div>
+        </div>
+
+        <input id="csv-file-input" type="file" accept=".csv" style="display: none;" />
+
+        <p class="upload-format-hint">
+          Format standard de <code>ZZZ - Character History.csv</code>, <code>ZZZ - Engine History.csv</code> ou <code>ZZZ - Rescreen History.csv</code> (détection automatique par nom de fichier).
+        </p>
       </div>
-
-      <div id="upload-zone" class="upload-zone">
-        <div class="upload-icon">📥</div>
-        <div class="upload-text">Glissez & déposez votre fichier CSV ici</div>
-        <div class="upload-subtext">ou cliquez pour sélectionner un fichier</div>
-      </div>
-
-      <input id="csv-file-input" type="file" accept=".csv" style="display: none;" />
-
-      <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
-        Le fichier doit suivre le format standard de <code>ZZZ - Character History.csv</code>, <code>ZZZ - Engine History.csv</code> ou <code>ZZZ - Rescreen History.csv</code> avec les colonnes Patch, Agent, Cost, 50/50 L Agent, etc. (détection automatique par nom de fichier).
-      </p>
     </div>
   </div>
 

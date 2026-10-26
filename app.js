@@ -145,12 +145,20 @@ function formatEngineSlug(name) {
     .replace(/\s+/g, '_');
 }
 
+function formatAgentName(name) {
+  if (name && name.includes('?')) {
+    return `<span class="agent-unknown">${name}</span>`;
+  }
+  return name;
+}
+
 function getSvgFallback(name, isEngine = false) {
   const clean = cleanAgentName(name);
   const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
-  const bgColor = '%230a0b0d';
-  const textColor = (name && name.includes('?')) ? '%239ca3af' : (isEngine ? '%2338bdf8' : '%239ca3af');
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="${bgColor}" width="100" height="100"/><text fill="${textColor}" font-family="Barlow Semi Condensed, Chakra Petch, sans-serif" font-size="36" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(label)}</text></svg>`;
+  const isUnknown = Boolean(name && name.includes('?'));
+  const textColor = isUnknown ? '%239ca3af' : (isEngine ? '%2338bdf8' : '%239ca3af');
+  const rectTag = isUnknown ? '' : '<rect fill="%230a0b0d" width="100" height="100"/>';
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">${rectTag}<text fill="${textColor}" font-family="Chakra Petch, monospace" font-style="italic" font-size="38" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(label)}</text></svg>`;
 }
 
 function getPortraitUrl(name, isEngine = false) {
@@ -567,7 +575,7 @@ function renderPullCard(item) {
           <span class="pull-index-num">#${item.id}</span>
         </div>
         <div class="pull-card-row">
-          <span class="pull-card-name">${item.agent}</span>
+          <span class="pull-card-name">${formatAgentName(item.agent)}</span>
           ${engineBadge}
           <span class="status-badge" data-status="${status}">${statusBadgeText}</span>
           ${patchText}
@@ -589,29 +597,25 @@ function openDetailModal(entity) {
   const activePulls = getActivePulls();
   const parentPull = activePulls.find(p => p.id === (entity.pullId || entity.id)) || entity;
   const isEngine = isEnginePull(entity) || isEnginePull(parentPull);
-  const typePrefix = isEngine ? 'Moteur W — ' : '';
   const displayId = parentPull.id || entity.pullId || entity.id;
+  const patchNum = String(parentPull.patch || entity.patch || '').replace(/^v/i, '');
 
   titleEl.innerHTML = `
-    <div class="modal-header-top">
-      <span class="modal-title-main">TIRAGE #${displayId} — ${typePrefix}${parentPull.agent || entity.agent}</span>
-    </div>
-    <div class="modal-tab-capsule">Tirage #${displayId}</div>
+    <span class="modal-title-main">TIRAGE #${displayId}</span>
+    <span class="modal-patch-badge">v${patchNum}</span>
   `;
 
   const status = getItemStatus(entity);
-  const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
   const isLossCycle = Boolean(parentPull.isLoss);
 
-  const renderAgentBox = (agentName, itemStatus, descText) => `
+  const renderAgentBox = (agentName, itemStatus, pullsCount) => `
     <div class="detail-agent-box" data-status="${itemStatus}">
-      <div class="detail-avatar" data-status="${itemStatus}">
+      <div class="detail-agent-frame ${isEngine ? 'is-engine' : ''}">
         <img src="${getPortraitUrl(agentName, isEngine)}" alt="${agentName}" onerror="handleImgError(this, '${safeName(agentName)}', ${isEngine})" />
       </div>
-      <div class="detail-agent-meta">
-        <div class="detail-agent-name">${agentName} ${engineBadge}</div>
-        <div class="detail-status-pill" data-status="${itemStatus}">${descText}</div>
-        <div class="detail-agent-patch">Patch : v${parentPull.patch || entity.patch}</div>
+      <div class="detail-agent-field">
+        <div class="detail-field-name">${formatAgentName(agentName)}</div>
+        <div class="detail-field-pulls" data-status="${itemStatus}">${pullsCount} pulls</div>
       </div>
     </div>
   `;
@@ -623,22 +627,17 @@ function openDetailModal(entity) {
     statusLabel = '50/50 Perdu + Garanti';
     agentSectionHtml = `
       <div class="detail-bays-grid">
-        ${renderAgentBox(parentPull.lostAgent, 'loss', `✗ 50/50 PERDU (Pity ${parentPull.lostPity})`)}
-        ${renderAgentBox(parentPull.agent, 'guaranteed', `★ GARANTI (${parentPull.cost} tirages)`)}
+        ${renderAgentBox(parentPull.lostAgent, 'loss', parentPull.lostPity)}
+        ${renderAgentBox(parentPull.agent, 'guaranteed', parentPull.cost)}
       </div>
-      <div class="detail-arrow-banner">➔ Rang S Garanti :</div>
     `;
   } else {
-    let statusDetail = '50/50 GAGNÉ';
     if (status === 'guaranteed') {
       statusLabel = entity.isRescreenFirst || parentPull.isGuaranteedFirst ? 'Garanti (Rescreen)' : 'Garanti';
-      statusDetail = (entity.isRescreenFirst || parentPull.isGuaranteedFirst)
-        ? `★ 100% GARANTI (Rescreen v${parentPull.patch || entity.patch})`
-        : `★ GARANTI (${parentPull.cost || entity.pity} tirages)`;
     }
     agentSectionHtml = `
       <div class="detail-bays-single">
-        ${renderAgentBox(parentPull.agent || entity.agent, status, statusDetail)}
+        ${renderAgentBox(parentPull.agent || entity.agent, status, parentPull.cost || entity.pity)}
       </div>
     `;
   }
@@ -783,11 +782,40 @@ function renderPullsUI() {
   }
 }
 
+function updateFilterCounts(items) {
+  const q = state.search ? state.search.toLowerCase().trim() : '';
+  const searchItems = q ? items.filter(item => {
+    const agent = (item.agent || '').toLowerCase();
+    const clean = cleanAgentName(item.agent).toLowerCase();
+    const targetAgent = (item.targetAgent || item.lostAgent || '').toLowerCase();
+    const patch = (item.patch || '').toLowerCase();
+    const isEngine = isEnginePull(item);
+    const isEngKw = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
+    const isRescreenKw = item.type === 'rescreen' && q.includes('rescreen');
+    return agent.includes(q) || clean.includes(q) || targetAgent.includes(q) || patch.includes(q) || isEngKw || isRescreenKw;
+  }) : items;
+
+  const counts = { all: searchItems.length, win: 0, loss: 0, guaranteed: 0 };
+  searchItems.forEach(item => {
+    const s = getItemStatus(item);
+    if (counts[s] !== undefined) counts[s]++;
+  });
+
+  document.querySelectorAll('.filter-pill').forEach(pill => {
+    const f = pill.dataset.filter;
+    const countEl = pill.querySelector('.filter-count');
+    if (countEl && counts[f] !== undefined) {
+      countEl.textContent = `(${counts[f]})`;
+    }
+  });
+}
+
 function render() {
   const activePulls = getActivePulls();
   const sRanks = expandPullsToSRanks(activePulls);
 
   updateStatsUI(activePulls, sRanks);
+  updateFilterCounts(sRanks);
   renderPullsUI();
 }
 
@@ -871,7 +899,7 @@ function renderImportRadios() {
   container.innerHTML = Object.values(CATEGORIES).map((cat, idx) => `
     <label class="import-radio-label">
       <input type="radio" name="import-target" value="${cat.id}" id="import-target-${cat.id}" ${idx === 0 ? 'checked' : ''} />
-      <span>${cat.icon} ${cat.label}</span>
+      <span>${cat.label}</span>
     </label>
   `).join('');
 }
@@ -887,6 +915,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput) {
     searchInput.addEventListener('input', e => {
       state.search = e.target.value;
+      const activePulls = getActivePulls();
+      const sRanks = expandPullsToSRanks(activePulls);
+      updateFilterCounts(sRanks);
       renderPullsUI();
     });
   }
