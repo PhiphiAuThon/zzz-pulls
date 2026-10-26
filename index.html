@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800&family=Chakra+Petch:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=21" />
+  <link rel="stylesheet" href="style.css?v=27" />
 </head>
 <body>
   <div class="container">
@@ -38,11 +38,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m22 12-4 0"/><path d="m6 12-4 0"/><path d="m12 6 0-4"/><path d="m12 22 0-4"/><circle cx="12" cy="12" r="2"/></svg>
         </div>
+        <div class="currency-value">
+          <span id="stat-winrate">—</span>
+        </div>
         <div class="currency-info">
-          <span class="currency-label">50/50 Winrate <span class="currency-sub">(<span id="stat-win-count">0</span>W / <span id="stat-loss-count">0</span>L)</span></span>
-          <div class="currency-value">
-            <span id="stat-winrate">—</span>
-          </div>
+          <span class="currency-label">50/50 Winrate</span>
+          <span class="currency-sub">(<span id="stat-win-count">0</span>W / <span id="stat-loss-count">0</span>L)</span>
         </div>
       </div>
 
@@ -50,11 +51,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
         </div>
+        <div class="currency-value">
+          <span id="stat-streak">—</span>
+        </div>
         <div class="currency-info">
-          <span class="currency-label">Streak <span id="stat-streak-records" class="currency-sub"></span></span>
-          <div class="currency-value">
-            <span id="stat-streak">—</span>
-          </div>
+          <span class="currency-label">Streak</span>
+          <span id="stat-streak-records" class="currency-sub"></span>
         </div>
       </div>
 
@@ -62,11 +64,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
         </div>
+        <div class="currency-value">
+          <span id="stat-avg-srank">—</span>
+        </div>
         <div class="currency-info">
           <span class="currency-label">Average Pity</span>
-          <div class="currency-value">
-            <span id="stat-avg-srank">—</span>
-          </div>
+          <span class="currency-sub">(<span id="stat-srank-count">0</span> S-Rank)</span>
         </div>
       </div>
 
@@ -74,11 +77,12 @@
         <div class="currency-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
         </div>
+        <div class="currency-value">
+          <span id="stat-total-pulls">—</span>
+        </div>
         <div class="currency-info">
           <span class="currency-label">Total Pulls</span>
-          <div class="currency-value">
-            <span id="stat-total-pulls">—</span>
-          </div>
+          <span class="currency-sub">(<span id="stat-poly-count">0</span> Poly)</span>
         </div>
       </div>
     </section>
@@ -160,6 +164,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

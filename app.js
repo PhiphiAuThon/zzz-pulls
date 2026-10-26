@@ -472,6 +472,7 @@ function computeStats(pulls, sRankItems) {
     total5050,
     winRate,
     avgPitySRank,
+    totalSRanks,
     streak: { currentStreak, maxWinStreak, maxLossStreak, isCurrentWin, hasFiftyFifty: fiftyFiftyPulls.length > 0 }
   };
 }
@@ -735,8 +736,16 @@ function updateStatsUI(pulls, sRanks) {
   // Totaux & Moyennes
   const totalPullsEl = document.getElementById('stat-total-pulls');
   if (totalPullsEl) totalPullsEl.textContent = stats.totalPulls.toLocaleString();
+  const polyCountEl = document.getElementById('stat-poly-count');
+  if (polyCountEl) {
+    const poly = stats.totalPulls * 160;
+    polyCountEl.textContent = poly >= 1000 ? `${Math.round(poly / 1000)}k` : `${poly}`;
+  }
+
   const avgSrankEl = document.getElementById('stat-avg-srank');
   if (avgSrankEl) avgSrankEl.textContent = stats.avgPitySRank;
+  const srankCountEl = document.getElementById('stat-srank-count');
+  if (srankCountEl) srankCountEl.textContent = stats.totalSRanks;
 
   // Placeholder barre de recherche
   const activeCatConfig = CATEGORIES[state.category] || ALL_CATEGORY;

@@ -233,7 +233,8 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 22px;
+  gap: 16px;
+  padding: 12px 20px;
   border: 6px solid var(--capsule-border);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   cursor: default;
@@ -245,12 +246,8 @@ body::before {
 }
 
 .currency-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background-color: var(--capsule-border);
   display: flex;
@@ -260,16 +257,29 @@ body::before {
 }
 
 .currency-icon svg {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   stroke: #000000;
+}
+
+.currency-value {
+  font-family: var(--font-main);
+  font-size: 2.7rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .currency-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
   min-width: 0;
   line-height: 1.2;
 }
@@ -277,31 +287,16 @@ body::before {
 .currency-label {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #8e95a5;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.currency-value {
-  font-family: var(--font-main);
-  font-size: 2.2rem;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
   white-space: nowrap;
 }
 
 .currency-sub {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #71788e;
+  white-space: nowrap;
 }
 
 /* Couleurs spécifiques des statistiques selon la maquette */
@@ -520,7 +515,8 @@ body::before {
 
 .pulls-grid-matrix {
   display: grid;
-  grid-template-columns: repeat(11, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  align-content: start;
   gap: 16px;
   width: 100%;
 }
@@ -1042,6 +1038,12 @@ body::before {
 /* ==========================================================================
    9. MEDIA QUERIES RESPONSIVE
    ========================================================================== */
+@media (max-width: 1250px) {
+  .stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1040px) {
   .search-box {
     flex: 0 1 280px;
@@ -1049,8 +1051,46 @@ body::before {
 }
 
 @media (max-width: 768px) {
-  .stats-strip {
-    grid-template-columns: repeat(2, 1fr);
+  body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .container {
+    height: auto;
+    min-height: 100vh;
+    padding: 16px 16px 24px;
+  }
+
+  #pulls-container {
+    overflow-y: visible;
+    flex: initial;
+    padding: 8px 0 24px 0;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .currency-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .currency-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .currency-value {
+    font-size: 2.1rem;
+  }
+
+  .currency-label {
+    font-size: 0.82rem;
+  }
+
+  .currency-sub {
+    font-size: 0.74rem;
   }
 
   .filter-bar {
@@ -1078,8 +1118,15 @@ body::before {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
   .stats-strip {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .pulls-grid-matrix {
+    grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+    gap: 12px;
   }
 }
