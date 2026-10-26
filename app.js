@@ -915,12 +915,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Bouton Refresh
-  const btnRefresh = document.getElementById('btn-refresh');
-  if (btnRefresh) {
-    btnRefresh.addEventListener('click', () => {
-      render();
-    });
+
+  // Scrollbar auto-masquage sur le conteneur de tirages
+  const pullsContainer = document.getElementById('pulls-container');
+  if (pullsContainer) {
+    let scrollTimeout;
+    pullsContainer.addEventListener('scroll', () => {
+      pullsContainer.classList.add('is-scrolling');
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        pullsContainer.classList.remove('is-scrolling');
+      }, 1000);
+    }, { passive: true });
   }
 
   // Modale de Détail
