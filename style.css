@@ -14,7 +14,7 @@
   /* Bordures unifiées neutres */
   --border-subtle: #24252b;
   --border-bright: #3d404a;
-  --tile-border: #26282e;
+  --tile-border: #383b44;
 
   /* Typography Colors */
   --text-primary: #f3f4f6;
@@ -58,7 +58,7 @@
   /* Centralized Stadium Capsule Tokens */
   --capsule-bg: #121316;
   --capsule-bg-hover: #1b1c20;
-  --capsule-border: #2c2e34;
+  --capsule-border: #3e424c;
   --capsule-border-hover: #ffffff;
   --capsule-text: #9ca3af;
   --capsule-text-hover: #ffffff;
@@ -102,7 +102,7 @@ body::before {
 .container {
   position: relative;
   z-index: 1;
-  max-width: 1440px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 20px 24px 40px;
 }
@@ -118,11 +118,11 @@ body::before {
 .sort-select,
 .btn-refresh {
   background-color: var(--capsule-bg);
-  border: 2px solid var(--capsule-border);
+  border: 5px solid var(--capsule-border);
   color: var(--capsule-text);
   border-radius: var(--radius-full);
   font-family: var(--font-main);
-  font-size: 0.88rem;
+  font-size: 1.1rem;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -162,13 +162,13 @@ body::before {
 }
 
 .cat-tab {
-  padding: 8px 22px;
-  font-size: 0.9rem;
+  padding: 10px 26px;
+  font-size: 1.15rem;
 }
 
 .cat-tab.active {
   color: var(--zzz-yellow);
-  border: 2.5px solid var(--zzz-yellow);
+  border: 5.5px solid var(--zzz-yellow);
   box-shadow: 0 0 18px var(--zzz-yellow-glow);
 }
 
@@ -179,7 +179,8 @@ body::before {
 }
 
 .btn-primary {
-  padding: 8px 20px;
+  padding: 10px 24px;
+  font-size: 1.15rem;
   border-color: rgba(255, 255, 255, 0.4);
   color: #ffffff;
 }
@@ -194,13 +195,14 @@ body::before {
   background-color: var(--capsule-bg);
   padding: 3px;
   border-radius: var(--radius-full);
-  border: 2px solid var(--capsule-border);
+  border: 5px solid var(--capsule-border);
 }
 
 .btn-group .btn-tab {
   border: none;
   background: transparent;
-  padding: 7px 22px;
+  padding: 9px 26px;
+  font-size: 1.15rem;
   border-radius: var(--radius-full);
 }
 
@@ -217,8 +219,8 @@ body::before {
 .stats-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 20px;
   width: 100%;
 }
 
@@ -226,8 +228,9 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
-  padding: 10px 18px;
+  gap: 16px;
+  padding: 14px 22px;
+  border: 6px solid var(--capsule-border);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   cursor: default;
   min-width: 0;
@@ -238,11 +241,11 @@ body::before {
 }
 
 .currency-icon {
-  width: 44px;
-  height: 44px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background-color: var(--bg-input);
-  border: 2px solid var(--capsule-border);
+  border: 4px solid var(--capsule-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -250,6 +253,8 @@ body::before {
 }
 
 .currency-icon svg {
+  width: 30px;
+  height: 30px;
   stroke: #8a90a4;
 }
 
@@ -264,15 +269,15 @@ body::before {
 }
 
 .currency-label {
-  font-size: 0.76rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #8e95a5;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .currency-value {
   font-family: var(--font-mono);
-  font-size: 1.55rem;
+  font-size: 2.2rem;
   font-weight: 900;
   letter-spacing: -0.5px;
   display: flex;
@@ -283,7 +288,7 @@ body::before {
 }
 
 .currency-sub {
-  font-size: 0.78rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #71788e;
 }
@@ -313,7 +318,8 @@ body::before {
 }
 
 .filter-pill {
-  padding: 8px 22px;
+  padding: 10px 24px;
+  font-size: 1.05rem;
 }
 
 .filter-pill.active {
@@ -346,16 +352,16 @@ body::before {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 0 1 380px;
+  flex: 0 1 440px;
 }
 
 .search-box input {
   background-color: var(--capsule-bg);
-  border: 2px solid var(--capsule-border);
+  border: 5px solid var(--capsule-border);
   border-radius: var(--radius-full);
-  padding: 8px 18px 8px 38px;
+  padding: 10px 20px 10px 48px;
   color: var(--text-primary);
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   font-weight: 600;
   outline: none;
   width: 100%;
@@ -369,11 +375,16 @@ body::before {
 
 .search-box .search-icon {
   position: absolute;
-  left: 14px;
+  left: 16px;
   display: flex;
   align-items: center;
   color: #8a90a4;
   pointer-events: none;
+}
+
+.search-box .search-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .filter-right {
@@ -385,11 +396,12 @@ body::before {
 .sort-select {
   appearance: none;
   -webkit-appearance: none;
-  padding: 8px 36px 8px 20px;
+  padding: 10px 44px 10px 24px;
+  font-size: 1.05rem;
   outline: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a90a4' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a90a4' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 14px center;
+  background-position: right 16px center;
 }
 
 .sort-select:focus {
@@ -450,7 +462,7 @@ body::before {
 .pulls-grid-matrix {
   display: grid;
   grid-template-columns: repeat(11, 1fr);
-  gap: 14px;
+  gap: 16px;
   width: 100%;
 }
 
@@ -460,7 +472,7 @@ body::before {
   width: 100%;
   border-radius: 50%;
   background-color: var(--capsule-bg);
-  border: 3.5px solid var(--tile-border);
+  border: 6px solid var(--tile-border);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
   display: flex;
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
@@ -489,19 +501,19 @@ body::before {
   position: absolute;
   bottom: 0px;
   right: 0px;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #000000;
+  border: 3.5px solid #000000;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
   z-index: 10;
 }
 
 .matrix-pity-num {
-  font-size: 0.85rem;
+  font-size: 1.15rem;
   font-weight: 900;
   font-family: var(--font-main);
   color: #000000;
@@ -525,7 +537,8 @@ body::before {
 
 .btn-refresh {
   color: #ffffff;
-  padding: 8px 30px;
+  padding: 10px 36px;
+  font-size: 1.15rem;
 }
 
 .btn-refresh:hover {
