@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&display=swap');
+
 /* ==========================================================================
    ZZZ 50/50 TRACKER (rng.moe style) - UNIFIED STYLESHEET
    Stadium Capsules & Single Source of Truth for Statuses
@@ -159,20 +161,124 @@ body::before {
 
 .category-tabs {
   display: inline-flex;
-  gap: 10px;
+  gap: 16px;
   flex-wrap: wrap;
   align-items: center;
+  padding-top: 14px;
 }
 
 .cat-tab {
-  padding: 10px 26px;
-  font-size: 1.15rem;
+  --tab-color: var(--zzz-yellow);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px 0 62px;
+  height: 52px;
+  min-height: 52px;
+  overflow: visible;
+  border: 4.5px solid var(--capsule-border);
+  background-color: var(--capsule-bg);
+  border-radius: var(--radius-full);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.cat-tab:hover {
+  border-color: var(--capsule-border-hover);
+  background-color: var(--capsule-bg-hover);
+  transform: translateY(-2px);
 }
 
 .cat-tab.active {
-  color: var(--zzz-yellow);
-  border: 5.5px solid var(--zzz-yellow);
-  box-shadow: 0 0 18px var(--zzz-yellow-glow);
+  border-color: var(--tab-color);
+  box-shadow: 0 0 20px var(--zzz-yellow-glow), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Texture de fond trame de points décomposée vers aplat droit */
+.cat-tab-texture {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  color: var(--tab-color);
+  opacity: 0;
+  transition: opacity 0.25s ease, color 0.25s ease;
+}
+
+.cat-tab-texture .cat-tab-halftone-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* En hover : texture blanche transparente, sans chevauchement de transparence */
+.cat-tab:not(.active):hover .cat-tab-texture {
+  color: #ffffff;
+  opacity: 0.4;
+}
+
+/* En actif : couleur vive définie par le bouton */
+.cat-tab.active .cat-tab-texture {
+  color: var(--tab-color);
+  opacity: 0.95;
+}
+
+/* Sticker du personnage qui dépasse du cadre sans cercle */
+.cat-tab-char {
+  position: absolute;
+  left: -8px;
+  bottom: -3px;
+  height: 68px;
+  width: auto;
+  max-width: 72px;
+  object-fit: contain;
+  z-index: 3;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.95));
+  transition: transform 0.2s ease;
+}
+
+.cat-tab:hover .cat-tab-char {
+  transform: translateY(-2px) scale(1.05);
+}
+
+/* Texte en diagonale, sans italique, avec bordure noire encore x2 plus épaisse (6px) */
+.cat-tab-label {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  font-family: var(--font-main);
+  font-size: 1.3rem;
+  font-weight: 900;
+  font-style: normal;
+  letter-spacing: 0.5px;
+  color: #ffffff; /* Blanc par défaut */
+  transform: rotate(-3.5deg) skewX(-4deg);
+  -webkit-text-stroke: 6px #000000;
+  paint-order: stroke fill;
+  text-shadow: 
+    3px 3px 0 #000000,
+    -3px -3px 0 #000000,
+    3px -3px 0 #000000,
+    -3px 3px 0 #000000,
+    0 4px 0 #000000,
+    4px 0 0 #000000,
+    -4px 0 0 #000000,
+    0 -4px 0 #000000,
+    0 5px 10px rgba(0, 0, 0, 0.95);
+  transition: color 0.2s ease, transform 0.2s ease;
+  user-select: none;
+}
+
+.cat-tab:hover .cat-tab-label {
+  transform: rotate(-3.5deg) skewX(-4deg) scale(1.03);
+}
+
+/* Se colore avec le reste quand sélectionné */
+.cat-tab.active .cat-tab-label {
+  color: var(--tab-color);
 }
 
 .header-actions {
@@ -344,10 +450,49 @@ body::before {
 }
 
 .agent-unknown {
-  font-family: var(--font-mono);
-  font-style: italic;
+  font-family: 'Orbitron', var(--font-mono);
+  font-style: normal;
   font-weight: 900;
-  letter-spacing: 0.5px;
+  letter-spacing: 2px;
+}
+
+/* Gros ??? natifs en Orbitron pour remplacer les images */
+.matrix-unknown,
+.pull-banner-unknown,
+.detail-unknown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  user-select: none;
+}
+
+.matrix-unknown {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  z-index: 1;
+}
+
+.pull-banner-unknown {
+  position: absolute;
+  right: 120px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 3.8rem;
+  letter-spacing: 4px;
+  opacity: 0.65;
+  filter: drop-shadow(-4px 0 12px rgba(0, 0, 0, 0.5));
+}
+
+.detail-unknown {
+  width: 100%;
+  height: 100%;
+  font-size: 2.5rem;
+  letter-spacing: 3px;
 }
 
 .filter-pill.active {

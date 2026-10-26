@@ -146,8 +146,9 @@ function formatEngineSlug(name) {
 }
 
 function formatAgentName(name) {
-  if (name && name.includes('?')) {
-    return `<span class="agent-unknown">${name}</span>`;
+  if (!name) return '';
+  if (name.includes('?')) {
+    return name.replace(/\?+/g, match => `<span class="agent-unknown">${match}</span>`);
   }
   return name;
 }
@@ -156,13 +157,22 @@ function getSvgFallback(name, isEngine = false) {
   const clean = cleanAgentName(name);
   const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
   const isUnknown = Boolean(name && name.includes('?'));
-  const textColor = isUnknown ? '%239ca3af' : (isEngine ? '%2338bdf8' : '%239ca3af');
-  const rectTag = isUnknown ? '' : '<rect fill="%230a0b0d" width="100" height="100"/>';
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">${rectTag}<text fill="${textColor}" font-family="Chakra Petch, monospace" font-style="italic" font-size="38" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(label)}</text></svg>`;
+  const textColor = isUnknown ? '#9ca3af' : (isEngine ? '#38bdf8' : '#9ca3af');
+  const rectTag = isUnknown ? '' : '<rect fill="#0a0b0d" width="100" height="100"/>';
+
+  let svgContent = '';
+  if (isUnknown) {
+    svgContent = `${rectTag}<defs><style>@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&amp;display=swap');</style></defs><text fill="${textColor}" font-family="Orbitron, sans-serif" font-style="normal" font-weight="900" font-size="44" letter-spacing="3" x="50%" y="58%" text-anchor="middle" dominant-baseline="middle">???</text>`;
+  } else {
+    svgContent = `${rectTag}<text fill="${textColor}" font-family="Chakra Petch, monospace" font-style="italic" font-size="38" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+  }
+
+  const svgXml = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">${svgContent}</svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgXml);
 }
 
 function getPortraitUrl(name, isEngine = false) {
-  if (!name) return getSvgFallback('', isEngine);
+  if (!name || name.includes('?')) return getSvgFallback(name || '', isEngine);
   const raw = name.trim();
   if (isEngine || isEngineName(raw)) {
     return `engines/W-Engine_${formatEngineSlug(raw)}.webp`;
@@ -171,6 +181,12 @@ function getPortraitUrl(name, isEngine = false) {
 }
 
 window.handleImgError = function(img, name, isEngine = false) {
+  if (!name || name.includes('?')) {
+    img.onerror = null;
+    img.src = getSvgFallback(name, isEngine);
+    return;
+  }
+
   const step = parseInt(img.dataset.errorStep, 10) || 0;
   img.dataset.errorStep = step + 1;
 
@@ -538,9 +554,14 @@ function renderMatrixTile(item) {
         ? `50/50 Perdu (bannière ${item.targetAgent})`
         : (item.isRescreenFirst ? `1er ${kindLabel} garanti (Rescreen v${item.patch})` : 'Garanti'));
 
+  const isUnknown = Boolean(item.agent && item.agent.includes('?'));
+  const mediaHtml = isUnknown
+    ? `<div class="matrix-unknown agent-unknown">???</div>`
+    : `<img class="matrix-img" src="${getPortraitUrl(item.agent, isEngine)}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />`;
+
   return `
     <div class="matrix-tile" data-status="${status}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${kindLabel} : ${item.agent} (${statusTitle}) - ${item.pity} tirages">
-      <img class="matrix-img" src="${getPortraitUrl(item.agent, isEngine)}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />
+      ${mediaHtml}
       <div class="matrix-pity-badge" data-status="${status}">
         <span class="matrix-pity-num">${item.pity}</span>
       </div>
@@ -551,12 +572,13 @@ function renderMatrixTile(item) {
 function renderPullCard(item) {
   const status = getItemStatus(item);
   const isEngine = isEnginePull(item);
+  const isUnknown = Boolean(item.agent && item.agent.includes('?'));
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
   const portraitUrl = getPortraitUrl(item.agent, isEngine);
 
   let statusBadgeText = '50/50 GAGNÉ';
   if (status === 'loss') {
-    const target = item.targetAgent ? ` (Bannière ${item.targetAgent})` : '';
+    const target = item.targetAgent ? ` (Bannière ${formatAgentName(item.targetAgent)})` : '';
     statusBadgeText = `50/50 PERDU${target}`;
   } else if (status === 'guaranteed') {
     statusBadgeText = item.isRescreenFirst ? 'GARANTI (RESCREEN)' : 'GARANTI';
@@ -564,10 +586,14 @@ function renderPullCard(item) {
 
   const patchText = item.patch ? `<span class="pull-card-patch">v${item.patch}</span>` : '';
 
+  const bannerMediaHtml = isUnknown
+    ? `<div class="pull-banner-unknown agent-unknown">???</div>`
+    : `<img class="pull-banner-img ${isEngine ? 'is-engine' : ''}" src="${portraitUrl}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />`;
+
   return `
     <div class="pull-card" data-status="${status}" data-item-id="${item.id}" data-pull-id="${item.pullId || item.id}">
       <div class="pull-card-banner">
-        <img class="pull-banner-img ${isEngine ? 'is-engine' : ''}" src="${portraitUrl}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />
+        ${bannerMediaHtml}
         <div class="pull-banner-overlay"></div>
       </div>
       <div class="pull-card-main">
@@ -608,17 +634,24 @@ function openDetailModal(entity) {
   const status = getItemStatus(entity);
   const isLossCycle = Boolean(parentPull.isLoss);
 
-  const renderAgentBox = (agentName, itemStatus, pullsCount) => `
-    <div class="detail-agent-box" data-status="${itemStatus}">
-      <div class="detail-agent-frame ${isEngine ? 'is-engine' : ''}">
-        <img src="${getPortraitUrl(agentName, isEngine)}" alt="${agentName}" onerror="handleImgError(this, '${safeName(agentName)}', ${isEngine})" />
+  const renderAgentBox = (agentName, itemStatus, pullsCount) => {
+    const isUnknown = Boolean(agentName && agentName.includes('?'));
+    const frameContent = isUnknown
+      ? `<div class="detail-unknown agent-unknown">???</div>`
+      : `<img src="${getPortraitUrl(agentName, isEngine)}" alt="${agentName}" onerror="handleImgError(this, '${safeName(agentName)}', ${isEngine})" />`;
+
+    return `
+      <div class="detail-agent-box" data-status="${itemStatus}">
+        <div class="detail-agent-frame ${isEngine ? 'is-engine' : ''}">
+          ${frameContent}
+        </div>
+        <div class="detail-agent-field">
+          <div class="detail-field-name">${formatAgentName(agentName)}</div>
+          <div class="detail-field-pulls" data-status="${itemStatus}">${pullsCount} pulls</div>
+        </div>
       </div>
-      <div class="detail-agent-field">
-        <div class="detail-field-name">${formatAgentName(agentName)}</div>
-        <div class="detail-field-pulls" data-status="${itemStatus}">${pullsCount} pulls</div>
-      </div>
-    </div>
-  `;
+    `;
+  };
 
   let agentSectionHtml = '';
   let statusLabel = '50/50 Gagné';
@@ -869,6 +902,7 @@ async function autoFetchCSVs() {
 
   if (updatedAny) {
     console.info(`✓ Données CSV chargées automatiquement (${Object.keys(CATEGORIES).map(k => `${k}: ${state.data[k].length}`).join(', ')})`);
+    renderCategoryTabs();
     render();
   }
 }
@@ -876,16 +910,89 @@ async function autoFetchCSVs() {
 // ==========================================================================
 // 10. GENERATION DYNAMIQUE DE LA NAVIGATION ET ECOUTEURS D'EVENEMENTS
 // ==========================================================================
+function getLatestValidPullForCategory(catId) {
+  // Pour le bouton "Tous", icône Soldat 11 imposée
+  if (catId === 'all') {
+    return { name: 'Soldier 11', isEngine: false };
+  }
+
+  let pulls = [];
+  let isEngineDefault = false;
+
+  if (CATEGORIES[catId]) {
+    pulls = state.data[catId] || [];
+    isEngineDefault = Boolean(CATEGORIES[catId].defaultIsEngine);
+  }
+
+  // Chercher en partant de la fin le dernier tirage valide (sans '?')
+  for (let i = pulls.length - 1; i >= 0; i--) {
+    const p = pulls[i];
+    const agentName = p && p.agent ? p.agent.trim() : '';
+    if (agentName && !agentName.includes('?')) {
+      return {
+        name: agentName,
+        isEngine: Boolean(p.isEngine)
+      };
+    }
+  }
+
+  // Fallbacks par défaut si aucun tirage valide trouvé
+  if (isEngineDefault) {
+    return { name: 'The Brimstone', isEngine: true };
+  }
+  return { name: 'Soldier 11', isEngine: false };
+}
+
 function renderCategoryTabs() {
   const container = document.getElementById('category-tabs');
   if (!container) return;
 
   const entries = [...Object.values(CATEGORIES), ALL_CATEGORY];
-  container.innerHTML = entries.map(cat => `
-    <button id="tab-cat-${cat.id}" class="cat-tab ${state.category === cat.id ? 'active' : ''}" data-category="${cat.id}" title="Afficher les tirages : ${cat.label}">
-      <span class="cat-text">${cat.label}</span>
-    </button>
-  `).join('');
+  container.innerHTML = entries.map(cat => {
+    const latest = getLatestValidPullForCategory(cat.id);
+    const imgUrl = getPortraitUrl(latest.name, latest.isEngine);
+    return `
+      <button id="tab-cat-${cat.id}" class="cat-tab ${state.category === cat.id ? 'active' : ''}" data-category="${cat.id}" title="Afficher les tirages : ${cat.label}">
+        <span class="cat-tab-texture" aria-hidden="true">
+          <svg class="cat-tab-halftone-svg" viewBox="0 0 160 50" preserveAspectRatio="none">
+            <path d="M 148 0 L 160 0 L 160 50 L 120 50 Z" fill="currentColor" />
+            <!-- Ligne 1 (cy=8, haut -> plus à droite) -->
+            <circle cx="95" cy="8" r="1.0" fill="currentColor" />
+            <circle cx="105" cy="8" r="1.6" fill="currentColor" />
+            <circle cx="115" cy="8" r="2.3" fill="currentColor" />
+            <circle cx="125" cy="8" r="3.2" fill="currentColor" />
+            <circle cx="135" cy="8" r="4.2" fill="currentColor" />
+            <!-- Ligne 2 (cy=16) -->
+            <circle cx="89" cy="16" r="1.0" fill="currentColor" />
+            <circle cx="99" cy="16" r="1.6" fill="currentColor" />
+            <circle cx="109" cy="16" r="2.3" fill="currentColor" />
+            <circle cx="119" cy="16" r="3.2" fill="currentColor" />
+            <circle cx="129" cy="16" r="4.2" fill="currentColor" />
+            <!-- Ligne 3 (cy=25) -->
+            <circle cx="83" cy="25" r="1.0" fill="currentColor" />
+            <circle cx="93" cy="25" r="1.6" fill="currentColor" />
+            <circle cx="103" cy="25" r="2.3" fill="currentColor" />
+            <circle cx="113" cy="25" r="3.2" fill="currentColor" />
+            <circle cx="123" cy="25" r="4.2" fill="currentColor" />
+            <!-- Ligne 4 (cy=34) -->
+            <circle cx="77" cy="34" r="1.0" fill="currentColor" />
+            <circle cx="87" cy="34" r="1.6" fill="currentColor" />
+            <circle cx="97" cy="34" r="2.3" fill="currentColor" />
+            <circle cx="107" cy="34" r="3.2" fill="currentColor" />
+            <circle cx="117" cy="34" r="4.2" fill="currentColor" />
+            <!-- Ligne 5 (cy=42, bas -> plus à gauche) -->
+            <circle cx="71" cy="42" r="1.0" fill="currentColor" />
+            <circle cx="81" cy="42" r="1.6" fill="currentColor" />
+            <circle cx="91" cy="42" r="2.3" fill="currentColor" />
+            <circle cx="101" cy="42" r="3.2" fill="currentColor" />
+            <circle cx="111" cy="42" r="4.2" fill="currentColor" />
+          </svg>
+        </span>
+        <img class="cat-tab-char" src="${imgUrl}" alt="${safeName(latest.name)}" onerror="handleImgError(this, '${safeName(latest.name)}', ${latest.isEngine})" loading="lazy" />
+        <span class="cat-tab-label">${cat.label}</span>
+      </button>
+    `;
+  }).join('');
 
   container.querySelectorAll('.cat-tab').forEach(tab => {
     tab.addEventListener('click', () => setCategory(tab.dataset.category));
@@ -1046,6 +1153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPulls = parsePullsFromCSV(text, targetType);
         if (newPulls.length > 0) {
           state.data[targetType] = newPulls;
+          renderCategoryTabs();
           setCategory(targetType);
           if (uploadModal) uploadModal.classList.remove('active');
         } else {
