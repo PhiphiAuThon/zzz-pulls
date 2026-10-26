@@ -546,76 +546,58 @@ function renderPullCard(pull) {
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
   let contentHtml = '';
 
-  if (status === 'guaranteed') {
+  if (status === 'loss') {
     contentHtml = `
-      <div class="character-entry">
-        <div class="portrait-wrapper" data-status="guaranteed">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
-          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
+      <div class="pull-bays-wrapper loss-flow">
+        <div class="pull-agent-bay">
+          <div class="bay-portrait-frame" data-status="loss">
+            <img class="bay-img" src="${getPortraitUrl(pull.lostAgent, isEngine)}" alt="${pull.lostAgent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.lostAgent)}', ${isEngine})" />
+          </div>
+          <div class="bay-info">
+            <span class="bay-name">${pull.lostAgent} ${engineBadge}</span>
+            <span class="bay-pity-inline">${pull.lostPity}</span>
+          </div>
         </div>
-        <div class="character-info">
-          <div class="character-name">${pull.agent} ${engineBadge}</div>
-          <span class="status-badge" data-status="guaranteed">★ 100% GARANTI</span>
-          <span class="banner-notice">1er ${isEngine ? 'Moteur W' : 'Agent'} garanti de la version ${pull.patch} (Rescreen)</span>
+
+        <div class="pull-chevron-arrow">
+          <span class="chevron-icons">❯❯❯</span>
         </div>
-      </div>
-    `;
-  } else if (status === 'win') {
-    contentHtml = `
-      <div class="character-entry">
-        <div class="portrait-wrapper" data-status="win">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
-          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
-        </div>
-        <div class="character-info">
-          <div class="character-name">${pull.agent} ${engineBadge}</div>
-          <span class="status-badge" data-status="win">✓ 50/50 GAGNÉ</span>
-          ${pull.bannerFrom ? `<span class="banner-notice">Bannière : ${pull.bannerFrom}</span>` : ''}
+
+        <div class="pull-agent-bay">
+          <div class="bay-portrait-frame" data-status="guaranteed">
+            <img class="bay-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
+          </div>
+          <div class="bay-info">
+            <span class="bay-name">${pull.agent} ${engineBadge}</span>
+            <span class="bay-pity-inline">${pull.cost}</span>
+          </div>
         </div>
       </div>
     `;
   } else {
     contentHtml = `
-      <div class="character-entry">
-        <div class="portrait-wrapper" data-status="loss">
-          <img class="portrait-img" src="${getPortraitUrl(pull.lostAgent, isEngine)}" alt="${pull.lostAgent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.lostAgent)}', ${isEngine})" />
-          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
-        </div>
-        <div class="character-info">
-          <div class="character-name">${pull.lostAgent} ${engineBadge}</div>
-          <span class="status-badge" data-status="loss">✗ 50/50 PERDU</span>
-          <span class="pity-sub-text">Pity : <strong>${pull.lostPity}</strong></span>
-        </div>
-      </div>
-      <div class="flow-arrow">➔<span>GARANTI</span></div>
-      <div class="character-entry">
-        <div class="portrait-wrapper" data-status="guaranteed">
-          <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
-          <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
-        </div>
-        <div class="character-info">
-          <div class="character-name">${pull.agent} ${engineBadge}</div>
-          <span class="status-badge" data-status="guaranteed">★ GARANTI</span>
-          ${pull.bannerFrom ? `<span class="banner-notice">${pull.bannerFrom} ➔ ${pull.agent}</span>` : ''}
+      <div class="pull-bays-wrapper single-flow">
+        <div class="pull-agent-bay">
+          <div class="bay-portrait-frame" data-status="${status}">
+            <img class="bay-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
+          </div>
+          <div class="bay-info">
+            <span class="bay-name">${pull.agent} ${engineBadge}</span>
+            <span class="bay-pity-inline">${pull.cost}</span>
+          </div>
         </div>
       </div>
     `;
   }
 
-  const costPityClass = getPityClass(pull.cost);
-
   return `
     <div class="pull-card" data-status="${status}" data-pull-id="${pull.id}">
-      <div class="pull-meta">
-        <span class="pull-index">#${pull.id}</span>
-        <span class="pull-patch">Patch ${pull.patch}</span>
+      <div class="pull-index-cartridge">
+        <span class="pull-index-num">#${pull.id}</span>
       </div>
       <div class="pull-content">${contentHtml}</div>
-      <div class="pull-stats">
-        <div class="pity-pill ${costPityClass}">
-          ${pull.isLoss ? `+${pull.cost} Pity` : `${pull.cost} Pity`}
-        </div>
-        <div class="pull-total-cost">Total : <strong>${pull.total}</strong> tirages</div>
+      <div class="pull-total-capsule">
+        ${pull.total} Tirages
       </div>
     </div>
   `;
@@ -629,7 +611,12 @@ function openDetailModal(entity, isSRankItem) {
 
   const isEngine = isEnginePull(entity);
   const typePrefix = isEngine ? 'Moteur W — ' : '';
-  titleEl.textContent = `Tirage #${entity.id} — ${typePrefix}${entity.agent}`;
+  titleEl.innerHTML = `
+    <div class="modal-header-top">
+      <span class="modal-title-main">TIRAGE #${entity.id} — ${typePrefix}${entity.agent}</span>
+    </div>
+    <div class="modal-tab-capsule">Tirage #${entity.id}</div>
+  `;
 
   const status = getItemStatus(entity);
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
@@ -637,60 +624,68 @@ function openDetailModal(entity, isSRankItem) {
   const totalPulls = entity.totalCycle || entity.total || entity.pity;
 
   let statusLabel = '50/50 Gagné';
-  let statusDetail = '✓ 50/50 GAGNÉ';
+  let statusDetail = '50/50 GAGNÉ';
 
   if (status === 'loss') {
     statusLabel = '50/50 Perdu';
-    statusDetail = `✗ 50/50 PERDU (Pity ${entity.lostPity || entity.pity})`;
+    statusDetail = `50/50 PERDU (Pity ${entity.lostPity || entity.pity})`;
   } else if (status === 'guaranteed') {
     statusLabel = entity.isRescreenFirst ? 'Garanti (Rescreen)' : 'Garanti';
     statusDetail = entity.isRescreenFirst
-      ? `★ 100% GARANTI D'OFFICE (1er ${isEngine ? 'Moteur W' : 'Agent'} Rescreen v${entity.patch})`
-      : `★ RANG S GARANTI (${costPulls} tirages)`;
+      ? `★ 100% GARANTI (Rescreen v${entity.patch})`
+      : `★ GARANTI (${costPulls} tirages)`;
   }
 
-  const renderAvatarItem = (agentName, itemStatus, descText) => `
-    <div class="detail-card-inner">
+  const renderAgentBox = (agentName, itemStatus, descText) => `
+    <div class="detail-agent-box" data-status="${itemStatus}">
       <div class="detail-avatar" data-status="${itemStatus}">
         <img src="${getPortraitUrl(agentName, isEngine)}" alt="${agentName}" onerror="handleImgError(this, '${safeName(agentName)}', ${isEngine})" />
       </div>
-      <div class="detail-info">
-        <div class="detail-title">${agentName} ${engineBadge}</div>
-        <div class="detail-status-text" data-status="${itemStatus}">${descText}</div>
-        <div class="detail-sub-info">Patch : v${entity.patch}</div>
+      <div class="detail-agent-meta">
+        <div class="detail-agent-name">${agentName} ${engineBadge}</div>
+        <div class="detail-status-pill" data-status="${itemStatus}">${descText}</div>
+        <div class="detail-agent-patch">Patch : v${entity.patch}</div>
       </div>
     </div>
   `;
 
-  let avatarBlockHtml = '';
+  let agentSectionHtml = '';
   if (!isSRankItem && entity.isLoss) {
-    avatarBlockHtml = `
-      ${renderAvatarItem(entity.lostAgent, 'loss', `✗ 50/50 PERDU (Pity ${entity.lostPity})`)}
-      <div class="detail-arrow">➔ Rang S Garanti :</div>
-      ${renderAvatarItem(entity.agent, 'guaranteed', `★ GARANTI (${entity.cost} tirages)`)}
+    agentSectionHtml = `
+      <div class="detail-bays-grid">
+        ${renderAgentBox(entity.lostAgent, 'loss', `✗ 50/50 PERDU (Pity ${entity.lostPity})`)}
+        ${renderAgentBox(entity.agent, 'guaranteed', `★ GARANTI (${entity.cost} tirages)`)}
+      </div>
+      <div class="detail-arrow-banner">➔ Rang S Garanti :</div>
     `;
   } else {
-    avatarBlockHtml = renderAvatarItem(entity.agent, status, statusDetail);
+    agentSectionHtml = `
+      <div class="detail-bays-single">
+        ${renderAgentBox(entity.agent, status, statusDetail)}
+      </div>
+    `;
   }
 
   contentEl.innerHTML = `
-    ${avatarBlockHtml}
-    <div class="detail-stats-grid">
-      <div class="detail-stat-item">
-        <span class="detail-stat-label">${isSRankItem ? 'Pity du tirage' : 'Total du cycle'}</span>
-        <span class="detail-stat-val">${costPulls} tirages</span>
-      </div>
-      <div class="detail-stat-item">
-        <span class="detail-stat-label">Coût polychromes</span>
-        <span class="detail-stat-val">${(costPulls * 160).toLocaleString()}</span>
-      </div>
-      <div class="detail-stat-item">
-        <span class="detail-stat-label">${isSRankItem ? 'Total du cycle' : 'Patch'}</span>
-        <span class="detail-stat-val">${isSRankItem ? `${totalPulls} tirages` : `v${entity.patch}`}</span>
-      </div>
-      <div class="detail-stat-item">
-        <span class="detail-stat-label">Statut</span>
-        <span class="detail-stat-val detail-status-text" data-status="${status}">${statusLabel}</span>
+    <div class="detail-console-interior">
+      ${agentSectionHtml}
+      <div class="detail-stats-grid">
+        <div class="detail-stat-item">
+          <span class="detail-stat-label">${isSRankItem ? 'Pity du tirage' : 'Total du cycle'}</span>
+          <span class="detail-stat-val">${costPulls} tirages</span>
+        </div>
+        <div class="detail-stat-item">
+          <span class="detail-stat-label">Coût polychromes</span>
+          <span class="detail-stat-val">${(costPulls * 160).toLocaleString()}</span>
+        </div>
+        <div class="detail-stat-item">
+          <span class="detail-stat-label">${isSRankItem ? 'Total du cycle' : 'Patch'}</span>
+          <span class="detail-stat-val">${isSRankItem ? `${totalPulls} tirages` : `v${entity.patch}`}</span>
+        </div>
+        <div class="detail-stat-item">
+          <span class="detail-stat-label">Statut</span>
+          <span class="detail-stat-val detail-status-val" data-status="${status}">${statusLabel}</span>
+        </div>
       </div>
     </div>
   `;
