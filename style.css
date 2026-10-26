@@ -306,7 +306,9 @@ body::before {
 
 /* Couleurs spécifiques des statistiques selon la maquette */
 .chip-winrate .currency-value { color: var(--guaranteed-color); }
-.chip-streak .currency-value { color: var(--loss-color); }
+.chip-streak .currency-value { color: var(--win-color); }
+.chip-streak[data-streak-type="win"] .currency-value { color: var(--win-color); }
+.chip-streak[data-streak-type="loss"] .currency-value { color: var(--loss-color); }
 .chip-pity .currency-value { color: var(--win-color); }
 .chip-pulls .currency-value { color: #ffffff; }
 

@@ -437,14 +437,19 @@ function computeStats(pulls, sRankItems) {
   let currentStreak = 0;
   let isCurrentWin = true;
   let maxWinStreak = 0;
+  let maxLossStreak = 0;
   let currentWinCounter = 0;
+  let currentLossCounter = 0;
 
   for (const p of fiftyFiftyPulls) {
     if (!p.isLoss) {
       currentWinCounter++;
+      currentLossCounter = 0;
       if (currentWinCounter > maxWinStreak) maxWinStreak = currentWinCounter;
     } else {
+      currentLossCounter++;
       currentWinCounter = 0;
+      if (currentLossCounter > maxLossStreak) maxLossStreak = currentLossCounter;
     }
   }
 
@@ -467,7 +472,7 @@ function computeStats(pulls, sRankItems) {
     total5050,
     winRate,
     avgPitySRank,
-    streak: { currentStreak, maxWinStreak, isCurrentWin, hasFiftyFifty: fiftyFiftyPulls.length > 0 }
+    streak: { currentStreak, maxWinStreak, maxLossStreak, isCurrentWin, hasFiftyFifty: fiftyFiftyPulls.length > 0 }
   };
 }
 
@@ -708,15 +713,22 @@ function updateStatsUI(pulls, sRanks) {
 
   // Active Streak
   const streakEl = document.getElementById('stat-streak');
+  const streakChip = document.querySelector('.chip-streak');
   if (streakEl) {
-    streakEl.textContent = stats.streak.hasFiftyFifty ? `${stats.streak.currentStreak}/${stats.streak.maxWinStreak || 0}` : '0/0';
-  }
-  const streakTypeEl = document.getElementById('stat-streak-type');
-  if (streakTypeEl) {
     if (stats.streak.hasFiftyFifty && stats.streak.currentStreak > 0) {
-      streakTypeEl.textContent = `(${stats.streak.isCurrentWin ? 'W' : 'L'})`;
+      streakEl.textContent = `${stats.streak.currentStreak}${stats.streak.isCurrentWin ? 'W' : 'L'}`;
+      if (streakChip) streakChip.dataset.streakType = stats.streak.isCurrentWin ? 'win' : 'loss';
     } else {
-      streakTypeEl.textContent = '';
+      streakEl.textContent = '—';
+      if (streakChip) delete streakChip.dataset.streakType;
+    }
+  }
+  const streakRecordsEl = document.getElementById('stat-streak-records');
+  if (streakRecordsEl) {
+    if (stats.streak.hasFiftyFifty) {
+      streakRecordsEl.textContent = `(Max: ${stats.streak.maxWinStreak || 0}W / ${stats.streak.maxLossStreak || 0}L)`;
+    } else {
+      streakRecordsEl.textContent = '';
     }
   }
 
