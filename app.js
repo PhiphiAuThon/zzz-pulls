@@ -358,6 +358,13 @@ function getActivePulls() {
   return state.data[state.category] || [];
 }
 
+function getItemStatus(item) {
+  if (item.status) return item.status.toLowerCase();
+  if (item.isLoss) return 'loss';
+  if (item.isGuaranteedFirst) return 'guaranteed';
+  return 'win';
+}
+
 function expandPullsToSRanks(pulls) {
   const items = [];
   pulls.forEach(p => {
@@ -375,7 +382,7 @@ function expandPullsToSRanks(pulls) {
         pullId: p.id,
         agent: p.lostAgent,
         pity: p.lostPity,
-        status: 'LOST',
+        status: 'loss',
         patch: lossPatch,
         targetAgent: p.bannerFrom || p.agent,
         bannerFrom: p.bannerFrom,
@@ -389,7 +396,7 @@ function expandPullsToSRanks(pulls) {
         pullId: p.id,
         agent: p.agent,
         pity: p.cost,
-        status: 'GUARANTEED',
+        status: 'guaranteed',
         patch: guarPatch,
         lostAgent: p.lostAgent,
         totalCycle: p.total,
@@ -403,7 +410,7 @@ function expandPullsToSRanks(pulls) {
         pullId: p.id,
         agent: p.agent,
         pity: p.cost,
-        status: p.isGuaranteedFirst ? 'GUARANTEED' : 'WON',
+        status: p.isGuaranteedFirst ? 'guaranteed' : 'win',
         patch: p.patch,
         bannerFrom: p.bannerFrom,
         totalCycle: p.total,
@@ -422,11 +429,9 @@ function computeStats(pulls, sRankItems) {
   const losses = pulls.filter(p => p.isLoss).length;
   const total5050 = wins + losses;
   const winRate = total5050 > 0 ? ((wins / total5050) * 100).toFixed(1) : null;
-  const polychromes = totalPulls * 160;
 
   const totalSRanks = sRankItems.length;
-  const avgPitySRank = totalSRanks > 0 ? (totalPulls / totalSRanks).toFixed(1) : '0';
-  const avgPityLimited = pulls.length > 0 ? (totalPulls / pulls.length).toFixed(1) : '0';
+  const avgPitySRank = totalSRanks > 0 ? (totalPulls / totalSRanks).toFixed(2) : '0';
 
   const fiftyFiftyPulls = pulls.filter(p => !p.isGuaranteedFirst).sort((a, b) => a.id - b.id);
   let currentStreak = 0;
@@ -455,29 +460,14 @@ function computeStats(pulls, sRankItems) {
     }
   }
 
-  const lossMap = {};
-  for (const p of pulls) {
-    if (p.isLoss && p.lostAgent) {
-      if (!lossMap[p.lostAgent]) lossMap[p.lostAgent] = { count: 0, isEngine: isEnginePull(p) };
-      lossMap[p.lostAgent].count++;
-    }
-  }
-  const lossDistribution = Object.entries(lossMap)
-    .map(([agent, info]) => ({ agent, count: info.count, isEngine: info.isEngine }))
-    .sort((a, b) => b.count - a.count);
-
   return {
     totalPulls,
-    polychromes,
     wins,
     losses,
     total5050,
     winRate,
-    totalSRanks,
     avgPitySRank,
-    avgPityLimited,
-    streak: { currentStreak, isWin: isCurrentWin, isCurrentWin, maxWinStreak, hasFiftyFifty: fiftyFiftyPulls.length > 0 },
-    lossDistribution
+    streak: { currentStreak, maxWinStreak, hasFiftyFifty: fiftyFiftyPulls.length > 0 }
   };
 }
 
@@ -488,10 +478,10 @@ function filterAndSortEntries(entries, { filter, search, sort, isMatrix }) {
   const q = search ? search.toLowerCase().trim() : '';
 
   const filtered = entries.filter(item => {
-    const status = isMatrix ? item.status : (item.isLoss ? 'LOST' : (item.isGuaranteedFirst ? 'GUARANTEED' : 'WON'));
-    if (filter === 'win' && status !== 'WON') return false;
-    if (filter === 'loss' && status !== 'LOST') return false;
-    if (filter === 'guaranteed' && status !== 'GUARANTEED') return false;
+    const status = getItemStatus(item);
+    if (filter === 'win' && status !== 'win') return false;
+    if (filter === 'loss' && status !== 'loss') return false;
+    if (filter === 'guaranteed' && status !== 'guaranteed') return false;
 
     if (q) {
       const agent = (item.agent || '').toLowerCase();
@@ -525,69 +515,55 @@ function filterAndSortEntries(entries, { filter, search, sort, isMatrix }) {
 // 7. RENDU HTML : TUILES, CARTES & MODALES
 // ==========================================================================
 function renderMatrixTile(item) {
-  const isWon = item.status === 'WON';
-  const isLost = item.status === 'LOST';
+  const status = getItemStatus(item);
   const isEngine = isEnginePull(item);
-
-  const tileClass = isLost ? 'is-lost' : (isWon ? 'is-won' : 'is-guaranteed');
-  const badgeClass = isLost ? 'loss' : (isWon ? 'win' : 'guaranteed');
-  const letter = isLost ? 'L' : (isWon ? 'W' : 'G');
-
   const kindLabel = isEngine ? 'Moteur W' : 'Agent';
-  let statusTitle = isWon ? '50/50 Gagné' : (isLost ? `50/50 Perdu (bannière ${item.targetAgent})` : 'Garanti');
-  if (item.isRescreenFirst) {
-    statusTitle = `1er ${kindLabel} garanti (Rescreen v${item.patch})`;
-  }
+  const statusTitle = status === 'win'
+    ? '50/50 Gagné'
+    : (status === 'loss'
+        ? `50/50 Perdu (bannière ${item.targetAgent})`
+        : (item.isRescreenFirst ? `1er ${kindLabel} garanti (Rescreen v${item.patch})` : 'Garanti'));
 
   return `
-    <div class="matrix-tile ${tileClass} ${isEngine ? 'is-engine' : ''}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${kindLabel} : ${item.agent} (${statusTitle}) - ${item.pity} tirages">
+    <div class="matrix-tile" data-status="${status}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${kindLabel} : ${item.agent} (${statusTitle}) - ${item.pity} tirages">
       <img class="matrix-img" src="${getPortraitUrl(item.agent, isEngine)}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />
-      <div class="matrix-top-bar">
-        <span class="matrix-index-badge">#${item.id}</span>
-        <span class="matrix-patch-badge">v${item.patch}</span>
-      </div>
-      <div class="matrix-bottom-bar">
-        <div class="matrix-badge-combined ${badgeClass}">
-          <span class="matrix-pity-num">${item.pity}</span>
-        </div>
+      <div class="matrix-pity-badge" data-status="${status}">
+        <span class="matrix-pity-num">${item.pity}</span>
       </div>
     </div>
   `;
 }
 
 function renderPullCard(pull) {
-  const isWon = !pull.isLoss && !pull.isGuaranteedFirst;
-  const isGuaranteedDirect = Boolean(pull.isGuaranteedFirst);
+  const status = getItemStatus(pull);
   const isEngine = isEnginePull(pull);
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
-
-  const cardClass = pull.isLoss ? 'pull-card card-loss' : (isGuaranteedDirect ? 'pull-card card-guaranteed' : 'pull-card card-win');
   let contentHtml = '';
 
-  if (isGuaranteedDirect) {
+  if (status === 'guaranteed') {
     contentHtml = `
       <div class="character-entry">
-        <div class="portrait-wrapper is-guaranteed">
+        <div class="portrait-wrapper" data-status="guaranteed">
           <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
           <div class="character-name">${pull.agent} ${engineBadge}</div>
-          <span class="status-badge badge-guaranteed">★ 100% GARANTI</span>
+          <span class="status-badge" data-status="guaranteed">★ 100% GARANTI</span>
           <span class="banner-notice">1er ${isEngine ? 'Moteur W' : 'Agent'} garanti de la version ${pull.patch} (Rescreen)</span>
         </div>
       </div>
     `;
-  } else if (isWon) {
+  } else if (status === 'win') {
     contentHtml = `
       <div class="character-entry">
-        <div class="portrait-wrapper is-won">
+        <div class="portrait-wrapper" data-status="win">
           <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
           <div class="character-name">${pull.agent} ${engineBadge}</div>
-          <span class="status-badge badge-won">✓ 50/50 GAGNÉ</span>
+          <span class="status-badge" data-status="win">✓ 50/50 GAGNÉ</span>
           ${pull.bannerFrom ? `<span class="banner-notice">Bannière : ${pull.bannerFrom}</span>` : ''}
         </div>
       </div>
@@ -595,25 +571,25 @@ function renderPullCard(pull) {
   } else {
     contentHtml = `
       <div class="character-entry">
-        <div class="portrait-wrapper is-lost">
+        <div class="portrait-wrapper" data-status="loss">
           <img class="portrait-img" src="${getPortraitUrl(pull.lostAgent, isEngine)}" alt="${pull.lostAgent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.lostAgent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
           <div class="character-name">${pull.lostAgent} ${engineBadge}</div>
-          <span class="status-badge badge-lost">✗ 50/50 PERDU</span>
-          <span style="font-size: 0.72rem; color: var(--text-muted);">Pity : <strong style="color:var(--loss-color); font-family:var(--font-mono);">${pull.lostPity}</strong></span>
+          <span class="status-badge" data-status="loss">✗ 50/50 PERDU</span>
+          <span class="pity-sub-text">Pity : <strong>${pull.lostPity}</strong></span>
         </div>
       </div>
       <div class="flow-arrow">➔<span>GARANTI</span></div>
       <div class="character-entry">
-        <div class="portrait-wrapper is-guaranteed">
+        <div class="portrait-wrapper" data-status="guaranteed">
           <img class="portrait-img" src="${getPortraitUrl(pull.agent, isEngine)}" alt="${pull.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(pull.agent)}', ${isEngine})" />
           <div class="rank-badge">${isEngine ? 'WE' : 'S'}</div>
         </div>
         <div class="character-info">
           <div class="character-name">${pull.agent} ${engineBadge}</div>
-          <span class="status-badge badge-guaranteed">★ GARANTI</span>
+          <span class="status-badge" data-status="guaranteed">★ GARANTI</span>
           ${pull.bannerFrom ? `<span class="banner-notice">${pull.bannerFrom} ➔ ${pull.agent}</span>` : ''}
         </div>
       </div>
@@ -623,7 +599,7 @@ function renderPullCard(pull) {
   const costPityClass = getPityClass(pull.cost);
 
   return `
-    <div class="${cardClass}" data-pull-id="${pull.id}">
+    <div class="pull-card" data-status="${status}" data-pull-id="${pull.id}">
       <div class="pull-meta">
         <span class="pull-index">#${pull.id}</span>
         <span class="pull-patch">Patch ${pull.patch}</span>
@@ -649,121 +625,47 @@ function openDetailModal(entity, isSRankItem) {
   const typePrefix = isEngine ? 'Moteur W — ' : '';
   titleEl.textContent = `Tirage #${entity.id} — ${typePrefix}${entity.agent}`;
 
+  const status = getItemStatus(entity);
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
-  let avatarBlockHtml = '';
-  let statusLabel = '';
-  let statusColor = 'var(--win-color)';
-
-  if (isSRankItem) {
-    const isWon = entity.status === 'WON';
-    const isLost = entity.status === 'LOST';
-    let statusDesc = '';
-
-    if (isWon) {
-      statusColor = 'var(--win-color)';
-      statusLabel = '50/50 Gagné';
-      statusDesc = `<div style="color: var(--win-color); font-weight: 800;">✓ 50/50 GAGNÉ (Pity ${entity.pity})</div>`;
-    } else if (isLost) {
-      statusColor = 'var(--loss-color)';
-      statusLabel = '50/50 Perdu';
-      statusDesc = `
-        <div style="color: var(--loss-color); font-weight: 800;">✗ 50/50 PERDU (Pity ${entity.pity})</div>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">Tiré sur la bannière : ${entity.targetAgent}</div>
-      `;
-    } else if (entity.isRescreenFirst) {
-      statusColor = 'var(--guaranteed-color)';
-      statusLabel = 'Garanti (Rescreen)';
-      statusDesc = `
-        <div style="color: var(--guaranteed-color); font-weight: 800;">★ RANG S GARANTI D'OFFICE (Pity ${entity.pity})</div>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">1er ${isEngine ? 'Moteur W' : 'personnage'} garanti sur la bannière Rescreen v${entity.patch}</div>
-      `;
-    } else {
-      statusColor = 'var(--guaranteed-color)';
-      statusLabel = 'Garanti';
-      statusDesc = `
-        <div style="color: var(--guaranteed-color); font-weight: 800;">★ RANG S GARANTI (Pity ${entity.pity})</div>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">Garanti après avoir perdu contre : ${entity.lostAgent}</div>
-      `;
-    }
-
-    avatarBlockHtml = `
-      <div class="detail-card-inner">
-        <div class="detail-avatar" style="border-color: ${statusColor};">
-          <img src="${getPortraitUrl(entity.agent, isEngine)}" alt="${entity.agent}" onerror="handleImgError(this, '${safeName(entity.agent)}', ${isEngine})" />
-        </div>
-        <div class="detail-info">
-          <div class="detail-title">${entity.agent} ${engineBadge}</div>
-          ${statusDesc}
-          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Patch : v${entity.patch}</div>
-          ${isEngine ? `<div style="font-size: 0.78rem; color: var(--zzz-yellow); margin-top: 4px;">⚙️ Bannière de Moteur W (W-Engine)</div>` : ''}
-        </div>
-      </div>
-    `;
-  } else {
-    const isWon = !entity.isLoss && !entity.isGuaranteedFirst;
-    const isGuaranteedDirect = Boolean(entity.isGuaranteedFirst);
-
-    if (isGuaranteedDirect) {
-      statusColor = 'var(--guaranteed-color)';
-      statusLabel = '100% Garanti';
-      avatarBlockHtml = `
-        <div class="detail-card-inner">
-          <div class="detail-avatar" style="border-color: var(--guaranteed-color);">
-            <img src="${getPortraitUrl(entity.agent, isEngine)}" alt="${entity.agent}" onerror="handleImgError(this, '${safeName(entity.agent)}', ${isEngine})" />
-          </div>
-          <div class="detail-info">
-            <div class="detail-title">${entity.agent} ${engineBadge}</div>
-            <div style="color: var(--guaranteed-color); font-weight: 800;">★ 100% GARANTI D'OFFICE</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">1er ${isEngine ? 'Moteur W' : 'Agent'} garanti en version ${entity.patch} (Bannière Rescreen)</div>
-          </div>
-        </div>
-      `;
-    } else if (isWon) {
-      statusColor = 'var(--win-color)';
-      statusLabel = 'Victoire 50/50';
-      avatarBlockHtml = `
-        <div class="detail-card-inner">
-          <div class="detail-avatar" style="border-color: var(--win-color);">
-            <img src="${getPortraitUrl(entity.agent, isEngine)}" alt="${entity.agent}" onerror="handleImgError(this, '${safeName(entity.agent)}', ${isEngine})" />
-          </div>
-          <div class="detail-info">
-            <div class="detail-title">${entity.agent} ${engineBadge}</div>
-            <div style="color: var(--win-color); font-weight: 800;">✓ 50/50 GAGNÉ</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Version : Patch ${entity.patch}</div>
-          </div>
-        </div>
-      `;
-    } else {
-      statusColor = 'var(--loss-color)';
-      statusLabel = 'Perte 50/50';
-      avatarBlockHtml = `
-        <div class="detail-card-inner">
-          <div class="detail-avatar" style="border-color: var(--loss-color);">
-            <img src="${getPortraitUrl(entity.lostAgent, isEngine)}" alt="${entity.lostAgent}" onerror="handleImgError(this, '${safeName(entity.lostAgent)}', ${isEngine})" />
-          </div>
-          <div class="detail-info">
-            <div class="detail-title">${entity.lostAgent} ${engineBadge}</div>
-            <div style="color: var(--loss-color); font-weight: 800;">✗ 50/50 PERDU (Pity ${entity.lostPity})</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">${isEngine ? 'Moteur W standard obtenu' : 'Permanent obtenu'}</div>
-          </div>
-        </div>
-        <div style="text-align: center; color: var(--guaranteed-color); font-weight: 800; margin: 6px 0; font-size: 0.85rem;">➔ Rang S Garanti Obtenu :</div>
-        <div class="detail-card-inner">
-          <div class="detail-avatar" style="border-color: var(--guaranteed-color);">
-            <img src="${getPortraitUrl(entity.agent, isEngine)}" alt="${entity.agent}" onerror="handleImgError(this, '${safeName(entity.agent)}', ${isEngine})" />
-          </div>
-          <div class="detail-info">
-            <div class="detail-title">${entity.agent} ${engineBadge}</div>
-            <div style="color: var(--guaranteed-color); font-weight: 800;">★ GARANTI (${entity.cost} tirages)</div>
-            ${entity.bannerFrom ? `<div style="font-size: 0.75rem; color: var(--zzz-yellow);">Bannière : ${entity.bannerFrom} ➔ ${entity.agent}</div>` : ''}
-          </div>
-        </div>
-      `;
-    }
-  }
-
   const costPulls = isSRankItem ? entity.pity : entity.total;
   const totalPulls = entity.totalCycle || entity.total || entity.pity;
+
+  let statusLabel = '50/50 Gagné';
+  let statusDetail = '✓ 50/50 GAGNÉ';
+
+  if (status === 'loss') {
+    statusLabel = '50/50 Perdu';
+    statusDetail = `✗ 50/50 PERDU (Pity ${entity.lostPity || entity.pity})`;
+  } else if (status === 'guaranteed') {
+    statusLabel = entity.isRescreenFirst ? 'Garanti (Rescreen)' : 'Garanti';
+    statusDetail = entity.isRescreenFirst
+      ? `★ 100% GARANTI D'OFFICE (1er ${isEngine ? 'Moteur W' : 'Agent'} Rescreen v${entity.patch})`
+      : `★ RANG S GARANTI (${costPulls} tirages)`;
+  }
+
+  const renderAvatarItem = (agentName, itemStatus, descText) => `
+    <div class="detail-card-inner">
+      <div class="detail-avatar" data-status="${itemStatus}">
+        <img src="${getPortraitUrl(agentName, isEngine)}" alt="${agentName}" onerror="handleImgError(this, '${safeName(agentName)}', ${isEngine})" />
+      </div>
+      <div class="detail-info">
+        <div class="detail-title">${agentName} ${engineBadge}</div>
+        <div class="detail-status-text" data-status="${itemStatus}">${descText}</div>
+        <div class="detail-sub-info">Patch : v${entity.patch}</div>
+      </div>
+    </div>
+  `;
+
+  let avatarBlockHtml = '';
+  if (!isSRankItem && entity.isLoss) {
+    avatarBlockHtml = `
+      ${renderAvatarItem(entity.lostAgent, 'loss', `✗ 50/50 PERDU (Pity ${entity.lostPity})`)}
+      <div class="detail-arrow">➔ Rang S Garanti :</div>
+      ${renderAvatarItem(entity.agent, 'guaranteed', `★ GARANTI (${entity.cost} tirages)`)}
+    `;
+  } else {
+    avatarBlockHtml = renderAvatarItem(entity.agent, status, statusDetail);
+  }
 
   contentEl.innerHTML = `
     ${avatarBlockHtml}
@@ -782,7 +684,7 @@ function openDetailModal(entity, isSRankItem) {
       </div>
       <div class="detail-stat-item">
         <span class="detail-stat-label">Statut</span>
-        <span class="detail-stat-val" style="color: ${statusColor};">${statusLabel}</span>
+        <span class="detail-stat-val detail-status-text" data-status="${status}">${statusLabel}</span>
       </div>
     </div>
   `;
@@ -793,107 +695,31 @@ function openDetailModal(entity, isSRankItem) {
 // ==========================================================================
 // 8. SYNCHRONISATION DU DOM & RENDU PRINCIPAL
 // ==========================================================================
-function updateCategoryBadges() {
-  Object.keys(CATEGORIES).forEach(key => {
-    const badge = document.getElementById(`badge-cat-${key}`);
-    if (badge) {
-      badge.textContent = expandPullsToSRanks(state.data[key] || []).length;
-    }
-  });
-
-  const badgeAll = document.getElementById('badge-cat-all');
-  if (badgeAll) {
-    badgeAll.textContent = expandPullsToSRanks(getCombinedPulls()).length;
-  }
-}
-
-function renderLossDistribution(losses) {
-  const container = document.getElementById('losses-grid');
-  if (!container) return;
-
-  if (losses.length === 0) {
-    container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Aucune perte 50/50 enregistrée !</span>';
-    return;
-  }
-
-  container.innerHTML = losses.map(info => `
-    <div class="loss-agent-chip">
-      <img src="${getPortraitUrl(info.agent, info.isEngine)}" alt="${info.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(info.agent)}', ${info.isEngine})" />
-      <span class="loss-agent-name">${info.agent}</span>
-      <span class="loss-agent-count">${info.count}</span>
-    </div>
-  `).join('');
-}
-
 function updateStatsUI(pulls, sRanks) {
   const stats = computeStats(pulls, sRanks);
 
   // 50/50 Win Rate
   const winrateEl = document.getElementById('stat-winrate');
-  if (winrateEl) winrateEl.textContent = stats.winRate ? `${stats.winRate}%` : 'N/A';
-  document.getElementById('stat-win-count').textContent = stats.wins;
-  document.getElementById('stat-loss-count').textContent = stats.losses;
+  if (winrateEl) winrateEl.textContent = stats.winRate ? `${stats.winRate}%` : '—';
+  const winCountEl = document.getElementById('stat-win-count');
+  if (winCountEl) winCountEl.textContent = stats.wins;
+  const lossCountEl = document.getElementById('stat-loss-count');
+  if (lossCountEl) lossCountEl.textContent = stats.losses;
 
-  const barWin = document.getElementById('progress-win');
-  const barLoss = document.getElementById('progress-loss');
-  if (barWin && barLoss) {
-    barWin.style.width = stats.winRate ? `${stats.winRate}%` : '0%';
-    barLoss.style.width = stats.winRate ? `${100 - stats.winRate}%` : '0%';
-  }
-
-  // Série Active
+  // Active Streak
   const streakEl = document.getElementById('stat-streak');
   if (streakEl) {
-    if (stats.streak.hasFiftyFifty) {
-      streakEl.textContent = `${stats.streak.currentStreak}/${stats.streak.maxWinStreak || 0}`;
-      const streakTypeEl = document.getElementById('stat-streak-type');
-      if (streakTypeEl) streakTypeEl.textContent = '';
-      const maxStreakEl = document.getElementById('stat-max-streak');
-      if (maxStreakEl) maxStreakEl.textContent = stats.streak.maxWinStreak;
-    } else {
-      streakEl.textContent = '0/0';
-      const streakTypeEl = document.getElementById('stat-streak-type');
-      if (streakTypeEl) streakTypeEl.textContent = '';
-      const maxStreakEl = document.getElementById('stat-max-streak');
-      if (maxStreakEl) maxStreakEl.textContent = '0';
-    }
+    streakEl.textContent = stats.streak.hasFiftyFifty ? `${stats.streak.currentStreak}/${stats.streak.maxWinStreak || 0}` : '0/0';
   }
 
   // Totaux & Moyennes
   const totalPullsEl = document.getElementById('stat-total-pulls');
   if (totalPullsEl) totalPullsEl.textContent = stats.totalPulls.toLocaleString();
-  const polyEl = document.getElementById('stat-polychromes');
-  if (polyEl) polyEl.textContent = stats.polychromes.toLocaleString();
-  const totalSRanksEl = document.getElementById('stat-total-sranks');
-  if (totalSRanksEl) totalSRanksEl.textContent = stats.totalSRanks;
-  const limSRanksEl = document.getElementById('stat-limited-sranks');
-  if (limSRanksEl) limSRanksEl.textContent = pulls.length;
-  const stdSRanksEl = document.getElementById('stat-standard-sranks');
-  if (stdSRanksEl) stdSRanksEl.textContent = stats.losses;
   const avgSrankEl = document.getElementById('stat-avg-srank');
   if (avgSrankEl) avgSrankEl.textContent = stats.avgPitySRank;
-  const avgLimEl = document.getElementById('stat-avg-limited');
-  if (avgLimEl) avgLimEl.textContent = stats.avgPityLimited;
 
-  // Répartition des pertes
-  renderLossDistribution(stats.lossDistribution);
-
-  // Compteurs des boutons de filtre
-  const wonCount = sRanks.filter(i => i.status === 'WON').length;
-  const lostCount = sRanks.filter(i => i.status === 'LOST').length;
-  const guaranteedCount = sRanks.filter(i => i.status === 'GUARANTEED').length;
-
-  document.getElementById('count-all').textContent = stats.totalSRanks;
-  document.getElementById('count-won').textContent = wonCount;
-  document.getElementById('count-lost').textContent = lostCount;
-  const countGuarEl = document.getElementById('count-guaranteed');
-  if (countGuarEl) countGuarEl.textContent = guaranteedCount;
-
-  // Placeholder & Label source
+  // Placeholder barre de recherche
   const activeCatConfig = CATEGORIES[state.category] || ALL_CATEGORY;
-  const sourceLabel = document.getElementById('source-file-label');
-  if (sourceLabel) sourceLabel.textContent = activeCatConfig.file;
-
   const searchInput = document.getElementById('search-input');
   if (searchInput) searchInput.placeholder = activeCatConfig.searchPlaceholder;
 }
@@ -946,7 +772,6 @@ function render() {
   const activePulls = getActivePulls();
   const sRanks = expandPullsToSRanks(activePulls);
 
-  updateCategoryBadges();
   updateStatsUI(activePulls, sRanks);
   renderPullsUI();
 }
@@ -1015,9 +840,7 @@ function renderCategoryTabs() {
   const entries = [...Object.values(CATEGORIES), ALL_CATEGORY];
   container.innerHTML = entries.map(cat => `
     <button id="tab-cat-${cat.id}" class="cat-tab ${state.category === cat.id ? 'active' : ''}" data-category="${cat.id}" title="Afficher les tirages : ${cat.label}">
-      <span class="cat-icon">${cat.icon}</span>
       <span class="cat-text">${cat.label}</span>
-      <span id="badge-cat-${cat.id}" class="cat-badge">0</span>
     </button>
   `).join('');
 

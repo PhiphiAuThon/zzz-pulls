@@ -55,8 +55,6 @@
           <span class="currency-label">Active Streak</span>
           <div class="currency-value">
             <span id="stat-streak">—</span>
-            <span class="currency-sub" id="stat-streak-type"></span>
-            <span class="currency-sub" style="display:none;" id="stat-max-streak">0</span>
           </div>
         </div>
       </div>
@@ -69,7 +67,6 @@
           <span class="currency-label">Average Pity</span>
           <div class="currency-value">
             <span id="stat-avg-srank">—</span>
-            <span class="currency-sub" style="display:none;" id="stat-avg-limited">—</span>
           </div>
         </div>
       </div>
@@ -82,21 +79,8 @@
           <span class="currency-label">Total Pulls</span>
           <div class="currency-value">
             <span id="stat-total-pulls">—</span>
-            <span class="currency-sub" style="display:none;" id="stat-polychromes">—</span>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Standard Characters Losses Distribution -->
-    <section class="losses-section">
-      <div class="losses-header">
-        <div class="losses-title">
-          <span>Répartition des Pertes 50/50</span>
-        </div>
-      </div>
-      <div id="losses-grid" class="losses-grid">
-        <!-- Dynamically filled by app.js -->
       </div>
     </section>
 
@@ -105,10 +89,10 @@
       <div class="filter-left">
         <!-- Filter pills -->
         <div class="filter-pills">
-          <button class="filter-pill active" data-filter="all">Tous<span id="count-all" style="display:none;">0</span></button>
-          <button class="filter-pill pill-win" data-filter="win">50/50 Gagnés<span id="count-won" style="display:none;">0</span></button>
-          <button class="filter-pill pill-loss" data-filter="loss">50/50 Perdus<span id="count-lost" style="display:none;">0</span></button>
-          <button class="filter-pill pill-guaranteed" data-filter="guaranteed">Garantis<span id="count-guaranteed" style="display:none;">0</span></button>
+          <button class="filter-pill active" data-filter="all">Tous</button>
+          <button class="filter-pill" data-filter="win" data-status="win">50/50 Gagnés</button>
+          <button class="filter-pill" data-filter="loss" data-status="loss">50/50 Perdus</button>
+          <button class="filter-pill" data-filter="guaranteed" data-status="guaranteed">Garantis</button>
         </div>
 
         <!-- Search input -->

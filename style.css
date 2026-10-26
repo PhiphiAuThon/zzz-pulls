@@ -1,6 +1,6 @@
 /* ==========================================================================
-   ZZZ 50/50 TRACKER (rng.moe style) - STYLESHEET
-   Pure Square Grid & Detailed Cards Design
+   ZZZ 50/50 TRACKER (rng.moe style) - UNIFIED STYLESHEET
+   Stadium Capsules & Single Source of Truth for Statuses
    ========================================================================== */
 
 :root {
@@ -21,7 +21,7 @@
   --zzz-yellow: #d8ff00;
   --zzz-yellow-glow: rgba(216, 255, 0, 0.45);
   
-  /* Pull Status & Badge Colors (Win = Warm Golden Yellow, Loss = Magenta, Guaranteed = Cyan) */
+  /* Status Colors & Glows (CMYK Triad: Win = Golden Yellow, Loss = Magenta, Guaranteed = Cyan) */
   --win-color: #f8e119;
   --win-bg: rgba(248, 225, 25, 0.16);
   --win-border: #f8e119;
@@ -37,6 +37,7 @@
   --guaranteed-border: #00d4ea;
   --guaranteed-glow: rgba(0, 212, 234, 0.4);
 
+  /* Pity Tiers */
   --pity-early: #10b981;
   --pity-mid: #fbbf24;
   --pity-high: #f97316;
@@ -58,7 +59,7 @@
   --capsule-text: #9ca3af;
   --capsule-text-hover: #ffffff;
 
-  /* ZZZ Typography: Condensed Grotesque Display + Chakra Petch Monospace */
+  /* Typography */
   --font-main: 'Barlow Semi Condensed', 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'Chakra Petch', 'Barlow Semi Condensed', monospace;
 }
@@ -80,7 +81,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Background ambient ZZZ halftone & glow */
 body::before {
   content: '';
   position: fixed;
@@ -103,23 +103,20 @@ body::before {
 }
 
 /* ==========================================================================
-   ACTIONS & BUTTONS (ZZZ Capsule Style)
+   1. FONDATION COMMUNE : CAPSULES ZZZ (Boutons, Onglets, Filtres, Sélecteurs)
    ========================================================================== */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
+.btn,
+.btn-tab,
+.cat-tab,
+.stat-chip,
+.filter-pill,
+.sort-select,
+.btn-refresh {
   background-color: var(--capsule-bg);
   border: 2px solid var(--capsule-border);
   color: var(--capsule-text);
   border-radius: var(--radius-full);
+  font-family: var(--font-main);
   font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
@@ -127,58 +124,21 @@ body::before {
   user-select: none;
 }
 
-.btn:hover {
+.btn:hover,
+.btn-tab:hover,
+.cat-tab:hover,
+.stat-chip:hover,
+.filter-pill:hover,
+.sort-select:hover,
+.btn-refresh:hover {
   background-color: var(--capsule-bg-hover);
   color: var(--capsule-text-hover);
   border-color: var(--capsule-border-hover);
   transform: translateY(-1px);
 }
 
-.btn-primary {
-  background-color: var(--capsule-bg);
-  color: var(--capsule-text);
-  border: 2px solid var(--capsule-border);
-}
-
-.btn-primary:hover {
-  background-color: var(--capsule-bg-hover);
-  border-color: var(--capsule-border-hover);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-}
-
-.btn-group {
-  display: flex;
-  background-color: var(--capsule-bg);
-  padding: 4px;
-  border-radius: var(--radius-full);
-  border: 2px solid var(--capsule-border);
-}
-
-.btn-group .btn-tab {
-  background: transparent;
-  border: none;
-  color: var(--capsule-text);
-  padding: 8px 22px;
-  font-size: 0.88rem;
-  font-weight: 800;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-group .btn-tab:hover {
-  color: var(--capsule-text-hover);
-}
-
-.btn-group .btn-tab.active {
-  background-color: var(--zzz-yellow);
-  color: #000;
-  font-weight: 900;
-  box-shadow: 0 0 14px var(--zzz-yellow-glow);
-}
-
 /* ==========================================================================
-   CATEGORY NAVIGATION
+   2. NAVIGATION HAUTE (LIGNE 1 : ONGLETS & ACTIONS)
    ========================================================================== */
 .category-nav {
   display: flex;
@@ -197,39 +157,54 @@ body::before {
 }
 
 .cat-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background-color: var(--capsule-bg);
-  border: 2px solid var(--capsule-border);
-  color: var(--capsule-text);
   padding: 8px 22px;
   font-size: 0.9rem;
-  font-weight: 800;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.cat-tab:hover {
-  color: var(--capsule-text-hover);
-  border-color: var(--capsule-border-hover);
-  transform: translateY(-1px);
 }
 
 .cat-tab.active {
-  background-color: var(--capsule-bg);
   color: var(--zzz-yellow);
-  border: 2px solid var(--zzz-yellow);
+  border-color: var(--zzz-yellow);
   box-shadow: 0 0 16px var(--zzz-yellow-glow);
 }
 
-.cat-tab .cat-icon { display: none; }
-.cat-tab .cat-badge { display: none; }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-primary {
+  padding: 8px 20px;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+.btn-group {
+  display: flex;
+  background-color: var(--capsule-bg);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--capsule-border);
+}
+
+.btn-group .btn-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 22px;
+  border-radius: var(--radius-full);
+}
+
+.btn-group .btn-tab.active {
+  background-color: var(--zzz-yellow);
+  color: #000;
+  font-weight: 900;
+  box-shadow: 0 0 14px var(--zzz-yellow-glow);
+}
 
 /* ==========================================================================
-   STATISTICS INLINE STRIP (ZZZ Currency Capsules Style)
+   3. CAPSULES DE STATISTIQUES (LIGNE 2)
    ========================================================================== */
 .stats-strip {
   display: grid;
@@ -244,17 +219,13 @@ body::before {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background-color: var(--capsule-bg);
-  border: 2px solid var(--capsule-border);
-  border-radius: var(--radius-full);
   padding: 10px 18px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  cursor: default;
   min-width: 0;
 }
 
 .stat-chip:hover {
-  border-color: var(--capsule-border-hover);
   transform: translateY(-2px);
 }
 
@@ -272,7 +243,6 @@ body::before {
 
 .currency-icon svg {
   stroke: #8a90a4;
-  transition: stroke 0.2s ease;
 }
 
 .currency-info {
@@ -287,11 +257,8 @@ body::before {
 .currency-label {
   font-size: 0.76rem;
   font-weight: 800;
-  text-transform: none;
-  letter-spacing: 0.2px;
   color: #8e95a5;
   margin-bottom: 2px;
-  text-align: center;
 }
 
 .currency-value {
@@ -306,104 +273,20 @@ body::before {
   white-space: nowrap;
 }
 
-.chip-winrate .currency-value { color: var(--guaranteed-color); }
-.chip-streak .currency-value { color: var(--loss-color); }
-.chip-pity .currency-value { color: var(--zzz-yellow); }
-.chip-pulls .currency-value { color: #ffffff; }
-
 .currency-sub {
   font-size: 0.78rem;
   font-weight: 700;
   color: #71788e;
 }
 
-.progress-bar-win {
-  height: 100%;
-  background-color: var(--win-color);
-}
-
-.progress-bar-loss {
-  height: 100%;
-  background-color: var(--loss-color);
-}
+/* Couleurs spécifiques des statistiques selon la maquette */
+.chip-winrate .currency-value { color: var(--guaranteed-color); }
+.chip-streak .currency-value { color: var(--loss-color); }
+.chip-pity .currency-value { color: var(--win-color); }
+.chip-pulls .currency-value { color: #ffffff; }
 
 /* ==========================================================================
-   LOSS DISTRIBUTION SECTION
-   ========================================================================== */
-.losses-section {
-  display: none;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
-  margin-bottom: 14px;
-}
-
-.losses-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.losses-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.losses-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.loss-agent-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: var(--bg-input);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  padding: 3px 12px 3px 4px;
-  transition: all 0.2s ease;
-}
-
-.loss-agent-chip:hover {
-  border-color: var(--loss-border);
-  background-color: var(--loss-bg);
-}
-
-.loss-agent-chip img {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--loss-color);
-}
-
-.loss-agent-name {
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.loss-agent-count {
-  font-size: 0.72rem;
-  font-weight: 800;
-  font-family: var(--font-mono);
-  background: var(--loss-color);
-  color: #fff;
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-}
-
-/* ==========================================================================
-   FILTER & SEARCH BAR (ZZZ Capsule Style)
+   4. BARRE DE FILTRES ET RECHERCHE (LIGNE 3)
    ========================================================================== */
 .filter-bar {
   display: flex;
@@ -412,9 +295,6 @@ body::before {
   flex-wrap: wrap;
   gap: 14px;
   margin-bottom: 24px;
-  padding: 0;
-  background-color: transparent;
-  border: none;
 }
 
 .filter-left {
@@ -431,20 +311,6 @@ body::before {
 
 .filter-pill {
   padding: 8px 22px;
-  font-size: 0.88rem;
-  font-weight: 800;
-  border-radius: var(--radius-full);
-  background-color: var(--capsule-bg);
-  border: 2px solid var(--capsule-border);
-  color: var(--capsule-text);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.filter-pill:hover {
-  border-color: var(--capsule-border-hover);
-  color: var(--capsule-text-hover);
-  transform: translateY(-1px);
 }
 
 .filter-pill.active {
@@ -455,23 +321,20 @@ body::before {
   box-shadow: 0 0 14px var(--zzz-yellow-glow);
 }
 
-.filter-pill.active.pill-win {
+.filter-pill.active[data-status="win"] {
   background-color: var(--win-color);
-  color: #000;
   border-color: var(--win-color);
   box-shadow: 0 0 14px var(--win-glow);
 }
 
-.filter-pill.active.pill-loss {
+.filter-pill.active[data-status="loss"] {
   background-color: var(--loss-color);
-  color: #000;
   border-color: var(--loss-color);
   box-shadow: 0 0 14px var(--loss-glow);
 }
 
-.filter-pill.active.pill-guaranteed {
+.filter-pill.active[data-status="guaranteed"] {
   background-color: var(--guaranteed-color);
-  color: #000;
   border-color: var(--guaranteed-color);
   box-shadow: 0 0 14px var(--guaranteed-glow);
 }
@@ -506,7 +369,6 @@ body::before {
   left: 14px;
   display: flex;
   align-items: center;
-  justify-content: center;
   color: #8a90a4;
   pointer-events: none;
 }
@@ -520,24 +382,11 @@ body::before {
 .sort-select {
   appearance: none;
   -webkit-appearance: none;
-  background-color: var(--capsule-bg);
-  border: 2px solid var(--capsule-border);
-  color: var(--capsule-text);
   padding: 8px 36px 8px 20px;
-  font-size: 0.88rem;
-  font-weight: 800;
-  border-radius: var(--radius-full);
   outline: none;
-  cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a90a4' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
-  transition: all 0.15s ease;
-}
-
-.sort-select:hover {
-  color: var(--capsule-text-hover);
-  border-color: var(--capsule-border-hover);
 }
 
 .sort-select:focus {
@@ -546,7 +395,54 @@ body::before {
 }
 
 /* ==========================================================================
-   VIEW 1: GRILLE DE CARRES PURS (RNG.MOE STYLE)
+   5. LANGAGE DE STATUT UNIFIÉ (SOURCE UNIQUE DE VERITE CMYK)
+   ========================================================================== */
+/* Grille : survol et lueurs */
+.matrix-tile[data-status="win"]:hover { border-color: #fff; box-shadow: 0 0 20px var(--win-glow); }
+.matrix-tile[data-status="loss"]:hover { border-color: #fff; box-shadow: 0 0 20px var(--loss-glow); }
+.matrix-tile[data-status="guaranteed"]:hover { border-color: #fff; box-shadow: 0 0 20px var(--guaranteed-glow); }
+
+/* Badges de Pity sur la Grille */
+.matrix-pity-badge[data-status="win"] { background-color: var(--win-color); }
+.matrix-pity-badge[data-status="loss"] { background-color: var(--loss-color); }
+.matrix-pity-badge[data-status="guaranteed"] { background-color: var(--guaranteed-color); }
+
+/* Cartes détaillées */
+.pull-card[data-status="win"] { border-left: 4px solid var(--win-color); }
+.pull-card[data-status="loss"] { border-left: 4px solid var(--loss-color); }
+.pull-card[data-status="guaranteed"] { border-left: 4px solid var(--guaranteed-color); }
+
+.portrait-wrapper[data-status="win"] { border-color: var(--win-color); }
+.portrait-wrapper[data-status="loss"] { border-color: var(--loss-color); }
+.portrait-wrapper[data-status="guaranteed"] { border-color: var(--guaranteed-color); }
+
+.status-badge[data-status="win"] {
+  background-color: var(--win-bg);
+  color: var(--win-color);
+  border: 1px solid var(--win-border);
+}
+.status-badge[data-status="loss"] {
+  background-color: var(--loss-bg);
+  color: var(--loss-color);
+  border: 1px solid var(--loss-border);
+}
+.status-badge[data-status="guaranteed"] {
+  background-color: var(--guaranteed-bg);
+  color: var(--guaranteed-color);
+  border: 1px solid var(--guaranteed-border);
+}
+
+/* Modale de détail */
+.detail-avatar[data-status="win"] { border-color: var(--win-color); }
+.detail-avatar[data-status="loss"] { border-color: var(--loss-color); }
+.detail-avatar[data-status="guaranteed"] { border-color: var(--guaranteed-color); }
+
+.detail-status-text[data-status="win"] { color: var(--win-color); }
+.detail-status-text[data-status="loss"] { color: var(--loss-color); }
+.detail-status-text[data-status="guaranteed"] { color: var(--guaranteed-color); }
+
+/* ==========================================================================
+   6. VUE GRILLE DE RONDS PURS (MAQUETTE CONCEPT)
    ========================================================================== */
 .pulls-grid-matrix {
   display: grid;
@@ -560,13 +456,10 @@ body::before {
   aspect-ratio: 1 / 1;
   width: 100%;
   border-radius: 50%;
-  overflow: visible;
   background-color: #10121a;
   border: 2.5px solid #222634;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
   cursor: pointer;
   user-select: none;
@@ -579,14 +472,9 @@ body::before {
   z-index: 5;
 }
 
-.matrix-tile.is-won:hover { border-color: #fff; box-shadow: 0 0 20px var(--win-glow); }
-.matrix-tile.is-lost:hover { border-color: #fff; box-shadow: 0 0 20px var(--loss-glow); }
-.matrix-tile.is-guaranteed:hover { border-color: #fff; box-shadow: 0 0 20px var(--guaranteed-glow); }
-
 .matrix-img {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -594,54 +482,19 @@ body::before {
   z-index: 1;
 }
 
-.matrix-top-bar {
-  display: none;
-}
-
-.matrix-index-badge {
-  display: none;
-}
-
-.matrix-patch-badge {
-  display: none;
-}
-
-.matrix-bottom-bar {
-  display: contents;
-}
-
-.matrix-badge-combined {
+.matrix-pity-badge {
   position: absolute;
   bottom: -2px;
   right: -2px;
-  left: auto;
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid #0b0c12;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
   z-index: 10;
-  pointer-events: auto;
-}
-
-.matrix-badge-combined.win {
-  background-color: var(--win-color);
-}
-
-.matrix-badge-combined.loss {
-  background-color: var(--loss-color);
-}
-
-.matrix-badge-combined.guaranteed {
-  background-color: var(--guaranteed-color);
-}
-
-.matrix-tag-letter {
-  display: none;
 }
 
 .matrix-pity-num {
@@ -650,7 +503,6 @@ body::before {
   font-family: var(--font-mono);
   color: #000000;
   line-height: 1;
-  display: block;
   text-align: center;
   letter-spacing: -0.5px;
   transform: translateY(-0.5px);
@@ -664,27 +516,16 @@ body::before {
 }
 
 .btn-refresh {
-  background-color: var(--capsule-bg);
-  border: 2px solid var(--capsule-border);
   color: #ffffff;
-  font-size: 0.88rem;
-  font-weight: 800;
   padding: 8px 30px;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
 }
 
 .btn-refresh:hover {
-  background-color: var(--capsule-bg-hover);
-  border-color: var(--capsule-border-hover);
-  transform: translateY(-1px);
   box-shadow: 0 0 14px rgba(255, 255, 255, 0.2);
 }
 
 /* ==========================================================================
-   VIEW 2: CARTES DETAILLEES (LIST VIEW)
+   7. VUE CARTES DETAILLEES
    ========================================================================== */
 .pulls-container {
   display: flex;
@@ -703,8 +544,6 @@ body::before {
   align-items: center;
   gap: 20px;
   transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
 }
 
 .pull-card:hover {
@@ -713,10 +552,6 @@ body::before {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
-
-.pull-card.card-win { border-left: 4px solid var(--win-color); }
-.pull-card.card-loss { border-left: 4px solid var(--loss-color); }
-.pull-card.card-guaranteed { border-left: 4px solid var(--guaranteed-color); }
 
 .pull-meta {
   display: flex;
@@ -767,10 +602,6 @@ body::before {
   flex-shrink: 0;
 }
 
-.portrait-wrapper.is-lost { border-color: var(--loss-color); }
-.portrait-wrapper.is-won { border-color: var(--win-color); }
-.portrait-wrapper.is-guaranteed { border-color: var(--guaranteed-color); }
-
 .portrait-img {
   width: 100%;
   height: 100%;
@@ -778,7 +609,9 @@ body::before {
   transition: transform 0.3s ease;
 }
 
-.pull-card:hover .portrait-img { transform: scale(1.08); }
+.pull-card:hover .portrait-img {
+  transform: scale(1.08);
+}
 
 .rank-badge {
   position: absolute;
@@ -814,28 +647,20 @@ body::before {
   width: fit-content;
 }
 
-.status-badge.badge-won {
-  background-color: var(--win-bg);
-  color: var(--win-color);
-  border: 1px solid var(--win-border);
-}
-
-.status-badge.badge-lost {
-  background-color: var(--loss-bg);
-  color: var(--loss-color);
-  border: 1px solid var(--loss-border);
-}
-
-.status-badge.badge-guaranteed {
-  background-color: var(--guaranteed-bg);
-  color: var(--guaranteed-color);
-  border: 1px solid var(--guaranteed-border);
-}
-
 .banner-notice {
   font-size: 0.72rem;
   color: var(--zzz-yellow);
   font-weight: 600;
+}
+
+.pity-sub-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.pity-sub-text strong {
+  color: var(--loss-color);
+  font-family: var(--font-mono);
 }
 
 .flow-arrow {
@@ -915,7 +740,7 @@ body::before {
 }
 
 /* ==========================================================================
-   MODALES (DETAIL & IMPORT CSV)
+   8. MODALES (DETAIL ET IMPORT CSV)
    ========================================================================== */
 .modal-backdrop {
   display: none;
@@ -929,7 +754,9 @@ body::before {
   padding: 20px;
 }
 
-.modal-backdrop.active { display: flex; }
+.modal-backdrop.active {
+  display: flex;
+}
 
 .modal-box {
   background-color: var(--bg-secondary);
@@ -969,7 +796,9 @@ body::before {
   padding: 4px;
 }
 
-.modal-close:hover { color: var(--text-primary); }
+.modal-close:hover {
+  color: var(--text-primary);
+}
 
 .badge-we {
   display: inline-flex;
@@ -987,7 +816,90 @@ body::before {
   vertical-align: middle;
 }
 
-.import-category-selector { margin-bottom: 16px; }
+.detail-card-inner {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.detail-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--s-rank-border);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+.detail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.detail-status-text {
+  font-weight: 800;
+}
+
+.detail-sub-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.detail-arrow {
+  text-align: center;
+  color: var(--guaranteed-color);
+  font-weight: 800;
+  margin: 6px 0;
+  font-size: 0.85rem;
+}
+
+.detail-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: var(--bg-input);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  margin-top: 12px;
+}
+
+.detail-stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.detail-stat-val {
+  font-size: 1rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+/* Modal d'import */
+.import-category-selector {
+  margin-bottom: 16px;
+}
 
 .import-cat-title {
   display: block;
@@ -1025,7 +937,9 @@ body::before {
   color: var(--text-primary);
 }
 
-.import-radio-label input[type="radio"] { accent-color: var(--zzz-yellow); }
+.import-radio-label input[type="radio"] {
+  accent-color: var(--zzz-yellow);
+}
 
 .import-radio-label:has(input[type="radio"]:checked) {
   border-color: var(--zzz-yellow);
@@ -1044,7 +958,8 @@ body::before {
   margin-bottom: 16px;
 }
 
-.upload-zone:hover, .upload-zone.dragover {
+.upload-zone:hover,
+.upload-zone.dragover {
   border-color: var(--zzz-yellow);
   background-color: rgba(248, 225, 25, 0.05);
 }
@@ -1066,72 +981,8 @@ body::before {
   color: var(--text-muted);
 }
 
-.detail-card-inner {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.detail-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 2px solid var(--s-rank-border);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  flex-shrink: 0;
-}
-
-.detail-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.detail-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.detail-title {
-  font-size: 1.15rem;
-  font-weight: 800;
-}
-
-.detail-stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  background: var(--bg-input);
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  margin-top: 12px;
-}
-
-.detail-stat-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.detail-stat-label {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-.detail-stat-val {
-  font-size: 1rem;
-  font-weight: 800;
-  font-family: var(--font-mono);
-}
-
-
-
 /* ==========================================================================
-   RESPONSIVE MEDIA QUERIES
+   9. MEDIA QUERIES RESPONSIVE
    ========================================================================== */
 @media (max-width: 1360px) {
   .pulls-grid-matrix {
@@ -1148,6 +999,10 @@ body::before {
 }
 
 @media (max-width: 768px) {
+  .stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .pulls-grid-matrix {
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
@@ -1160,6 +1015,10 @@ body::before {
 }
 
 @media (max-width: 520px) {
+  .stats-strip {
+    grid-template-columns: 1fr;
+  }
+
   .pulls-grid-matrix {
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
