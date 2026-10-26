@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&display=swap');
-
 /* ==========================================================================
    ZZZ 50/50 TRACKER (rng.moe style) - UNIFIED STYLESHEET
    Stadium Capsules & Single Source of Truth for Statuses
@@ -42,15 +40,6 @@
   --guaranteed-bg: rgba(0, 212, 234, 0.16);
   --guaranteed-border: #00d4ea;
   --guaranteed-glow: rgba(0, 212, 234, 0.4);
-
-  /* Pity Tiers */
-  --pity-early: #10b981;
-  --pity-mid: #fbbf24;
-  --pity-high: #f97316;
-  --pity-hard: #f72585;
-
-  --s-rank-gold: #f59e0b;
-  --s-rank-border: rgba(245, 158, 11, 0.6);
 
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -595,11 +584,6 @@ body::before {
 .matrix-pity-badge[data-status="loss"] { background-color: var(--loss-color); }
 .matrix-pity-badge[data-status="guaranteed"] { background-color: var(--guaranteed-color); }
 
-/* Cartes détaillées */
-.portrait-wrapper[data-status="win"] { border-color: var(--win-color); }
-.portrait-wrapper[data-status="loss"] { border-color: var(--loss-color); }
-.portrait-wrapper[data-status="guaranteed"] { border-color: var(--guaranteed-color); }
-
 .status-badge[data-status="win"] {
   background-color: var(--win-bg);
   color: var(--win-color);
@@ -620,10 +604,6 @@ body::before {
 .detail-agent-box[data-status="win"] { border-color: var(--win-color); }
 .detail-agent-box[data-status="loss"] { border-color: var(--loss-color); }
 .detail-agent-box[data-status="guaranteed"] { border-color: var(--guaranteed-color); }
-
-.detail-status-text[data-status="win"] { color: var(--win-color); }
-.detail-status-text[data-status="loss"] { color: var(--loss-color); }
-.detail-status-text[data-status="guaranteed"] { color: var(--guaranteed-color); }
 
 /* ==========================================================================
    6. ZONE PRINCIPALE DE DÉFILEMENT (#pulls-container)
@@ -833,10 +813,6 @@ body::before {
   opacity: 0.9;
 }
 
-.pull-banner-overlay {
-  display: none;
-}
-
 /* Contenu avant-plan (sur une seule ligne, texte agrandi) */
 .pull-card-main {
   display: flex;
@@ -959,38 +935,6 @@ body::before {
 .pull-card:hover .pull-total-capsule {
   background: #333644;
   border-color: #4b5063;
-}
-
-.pity-pill.early {
-  color: var(--pity-early);
-  border-color: rgba(16, 185, 129, 0.4);
-  background-color: rgba(16, 185, 129, 0.08);
-}
-.pity-pill.mid {
-  color: var(--pity-mid);
-  border-color: rgba(251, 191, 36, 0.4);
-  background-color: rgba(251, 191, 36, 0.08);
-}
-.pity-pill.high {
-  color: var(--pity-high);
-  border-color: rgba(249, 115, 22, 0.4);
-  background-color: rgba(249, 115, 22, 0.08);
-}
-.pity-pill.hard {
-  color: var(--pity-hard);
-  border-color: rgba(247, 37, 133, 0.4);
-  background-color: rgba(247, 37, 133, 0.08);
-}
-
-.pull-total-cost {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-}
-
-.pull-total-cost strong {
-  color: var(--text-primary);
-  font-size: 0.9rem;
 }
 
 .empty-state {

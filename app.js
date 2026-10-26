@@ -89,11 +89,13 @@ const FALLBACK_CSVS = {
 3.1,Remielle,10,,10,1,
 ,Remielle,50,,50,5,
 ,Remielle,70,,70,7,
-,Sigrid,30,,30,3,`,
+,Sigrid,30,,30,3,
+"3.2",Promeia,80,60,140,14,Zhu Yuan`,
   engine: `Patch,Agent,Cost,,Total,Multi,50/50 L Agent
 "2.6",Qingming Birdcage,40,,40,4,
 "2.7",Cordis Germina,50,,50,5,
-"3.1",Ode of Resurrected Wings,50,50,100,10,Tusks of Fury`,
+"3.1",Ode of Resurrected Wings,50,50,100,10,Tusks of Fury
+"3.2",Frostfall Sickle,60,,60,6,`,
   rescreen: `Patch,Agent,Cost,,Total,Multi,50/50 L Agent
 "2.5",Alice,78,,78,8,
 "3.1",Metanukimorphosis (WE),68,,68,7,
@@ -130,6 +132,8 @@ function isEnginePull(item) {
 function formatCharSlug(name) {
   if (!name) return '';
   return cleanAgentName(name)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[\s\-]+/g, '_')
     .replace(/[^a-z0-9_]/g, '');
@@ -138,6 +142,8 @@ function formatCharSlug(name) {
 function formatEngineSlug(name) {
   if (!name) return '';
   return name.trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/^(w[-_ ]?engine|moteur[-_ ]?w)\s*[:\-_]?\s*/i, '')
     .replace(/[\s\-_]+we$/i, '')
     .replace(/\(we\)$/i, '')
@@ -156,18 +162,8 @@ function formatAgentName(name) {
 function getSvgFallback(name, isEngine = false) {
   const clean = cleanAgentName(name);
   const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
-  const isUnknown = Boolean(name && name.includes('?'));
-  const textColor = isUnknown ? '#9ca3af' : (isEngine ? '#38bdf8' : '#9ca3af');
-  const rectTag = isUnknown ? '' : '<rect fill="#0a0b0d" width="100" height="100"/>';
-
-  let svgContent = '';
-  if (isUnknown) {
-    svgContent = `${rectTag}<defs><style>@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&amp;display=swap');</style></defs><text fill="${textColor}" font-family="Orbitron, sans-serif" font-style="normal" font-weight="900" font-size="44" letter-spacing="3" x="50%" y="58%" text-anchor="middle" dominant-baseline="middle">???</text>`;
-  } else {
-    svgContent = `${rectTag}<text fill="${textColor}" font-family="Chakra Petch, monospace" font-style="italic" font-size="38" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
-  }
-
-  const svgXml = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">${svgContent}</svg>`;
+  const textColor = isEngine ? '#38bdf8' : '#9ca3af';
+  const svgXml = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="#0a0b0d" width="100" height="100"/><text fill="${textColor}" font-family="Chakra Petch, monospace" font-style="italic" font-size="38" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`;
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgXml);
 }
 
@@ -187,22 +183,11 @@ window.handleImgError = function(img, name, isEngine = false) {
     return;
   }
 
-  const step = parseInt(img.dataset.errorStep, 10) || 0;
-  img.dataset.errorStep = step + 1;
-
-  if (step === 0) {
-    // 1re tentative : basculer de dossier (personnage <-> moteur)
+  // Si non trouvé, tentative unique dans l'autre dossier (personnage <-> moteur)
+  if (!img.dataset.flipped) {
+    img.dataset.flipped = '1';
     img.src = isEngine ? `characters/${formatCharSlug(name)}.webp` : `engines/W-Engine_${formatEngineSlug(name)}.webp`;
     return;
-  }
-
-  if (step === 1) {
-    // 2e tentative : supprimer les accents
-    const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (normalized !== name) {
-      img.src = isEngine ? `engines/W-Engine_${formatEngineSlug(normalized)}.webp` : `characters/${formatCharSlug(normalized)}.webp`;
-      return;
-    }
   }
 
   // Fallback ultime SVG avec initiales
@@ -212,13 +197,6 @@ window.handleImgError = function(img, name, isEngine = false) {
 
 function safeName(str) {
   return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
-
-function getPityClass(pity) {
-  if (pity < 30) return 'early';
-  if (pity <= 73) return 'mid';
-  if (pity <= 80) return 'high';
-  return 'hard';
 }
 
 function parsePatchNumber(patch) {
@@ -480,13 +458,7 @@ function computeStats(pulls, sRankItems) {
   if (fiftyFiftyPulls.length > 0) {
     const lastPull = fiftyFiftyPulls[fiftyFiftyPulls.length - 1];
     isCurrentWin = !lastPull.isLoss;
-    for (let i = fiftyFiftyPulls.length - 1; i >= 0; i--) {
-      if (!fiftyFiftyPulls[i].isLoss === isCurrentWin) {
-        currentStreak++;
-      } else {
-        break;
-      }
-    }
+    currentStreak = isCurrentWin ? currentWinCounter : currentLossCounter;
   }
 
   return {
@@ -504,28 +476,26 @@ function computeStats(pulls, sRankItems) {
 // ==========================================================================
 // 6. PIPELINE DE FILTRAGE & DE TRI
 // ==========================================================================
-function filterAndSortEntries(entries, { filter, search, sort, isMatrix }) {
-  const q = search ? search.toLowerCase().trim() : '';
+function matchesSearch(item, query) {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  const agent = (item.agent || '').toLowerCase();
+  const clean = cleanAgentName(item.agent).toLowerCase();
+  const targetAgent = (item.targetAgent || item.lostAgent || '').toLowerCase();
+  const patch = (item.patch || '').toLowerCase();
+  const isEngine = isEnginePull(item);
+  const isEngKw = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
+  const isRescreenKw = item.type === 'rescreen' && q.includes('rescreen');
+  return agent.includes(q) || clean.includes(q) || targetAgent.includes(q) || patch.includes(q) || isEngKw || isRescreenKw;
+}
 
+function filterAndSortEntries(entries, { filter, search, sort }) {
   const filtered = entries.filter(item => {
     const status = getItemStatus(item);
     if (filter === 'win' && status !== 'win') return false;
     if (filter === 'loss' && status !== 'loss') return false;
     if (filter === 'guaranteed' && status !== 'guaranteed') return false;
-
-    if (q) {
-      const agent = (item.agent || '').toLowerCase();
-      const clean = cleanAgentName(item.agent).toLowerCase();
-      const targetAgent = (item.targetAgent || item.lostAgent || '').toLowerCase();
-      const patch = (item.patch || '').toLowerCase();
-      const isEngine = isEnginePull(item);
-      const isEngKw = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
-      const isRescreenKw = item.type === 'rescreen' && q.includes('rescreen');
-      if (!agent.includes(q) && !clean.includes(q) && !targetAgent.includes(q) && !patch.includes(q) && !isEngKw && !isRescreenKw) {
-        return false;
-      }
-    }
-    return true;
+    return matchesSearch(item, search);
   });
 
   filtered.sort((a, b) => {
@@ -594,7 +564,6 @@ function renderPullCard(item) {
     <div class="pull-card" data-status="${status}" data-item-id="${item.id}" data-pull-id="${item.pullId || item.id}">
       <div class="pull-card-banner">
         ${bannerMediaHtml}
-        <div class="pull-banner-overlay"></div>
       </div>
       <div class="pull-card-main">
         <div class="pull-index-cartridge">
@@ -771,19 +740,17 @@ function updateStatsUI(pulls, sRanks) {
   if (searchInput) searchInput.placeholder = activeCatConfig.searchPlaceholder;
 }
 
-function renderPullsUI() {
+function renderPullsUI(sourceItems) {
   const container = document.getElementById('pulls-container');
   if (!container) return;
 
-  const activePulls = getActivePulls();
+  const items = sourceItems || expandPullsToSRanks(getActivePulls());
   const isMatrix = state.view === 'matrix';
-  const sourceItems = expandPullsToSRanks(activePulls);
 
-  const filtered = filterAndSortEntries(sourceItems, {
+  const filtered = filterAndSortEntries(items, {
     filter: state.filter,
     search: state.search,
-    sort: state.sort,
-    isMatrix
+    sort: state.sort
   });
 
   if (filtered.length === 0) {
@@ -792,41 +759,12 @@ function renderPullsUI() {
     return;
   }
 
-  if (isMatrix) {
-    container.className = 'pulls-grid-matrix';
-    container.innerHTML = filtered.map(item => renderMatrixTile(item)).join('');
-    container.querySelectorAll('[data-item-id]').forEach(el => {
-      el.addEventListener('click', () => {
-        const id = parseInt(el.dataset.itemId, 10);
-        const item = sourceItems.find(i => i.id === id);
-        if (item) openDetailModal(item);
-      });
-    });
-  } else {
-    container.className = 'pulls-container';
-    container.innerHTML = filtered.map(item => renderPullCard(item)).join('');
-    container.querySelectorAll('[data-item-id]').forEach(el => {
-      el.addEventListener('click', () => {
-        const id = parseInt(el.dataset.itemId, 10);
-        const item = sourceItems.find(i => i.id === id);
-        if (item) openDetailModal(item);
-      });
-    });
-  }
+  container.className = isMatrix ? 'pulls-grid-matrix' : 'pulls-container';
+  container.innerHTML = filtered.map(item => isMatrix ? renderMatrixTile(item) : renderPullCard(item)).join('');
 }
 
 function updateFilterCounts(items) {
-  const q = state.search ? state.search.toLowerCase().trim() : '';
-  const searchItems = q ? items.filter(item => {
-    const agent = (item.agent || '').toLowerCase();
-    const clean = cleanAgentName(item.agent).toLowerCase();
-    const targetAgent = (item.targetAgent || item.lostAgent || '').toLowerCase();
-    const patch = (item.patch || '').toLowerCase();
-    const isEngine = isEnginePull(item);
-    const isEngKw = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
-    const isRescreenKw = item.type === 'rescreen' && q.includes('rescreen');
-    return agent.includes(q) || clean.includes(q) || targetAgent.includes(q) || patch.includes(q) || isEngKw || isRescreenKw;
-  }) : items;
+  const searchItems = state.search ? items.filter(item => matchesSearch(item, state.search)) : items;
 
   const counts = { all: searchItems.length, win: 0, loss: 0, guaranteed: 0 };
   searchItems.forEach(item => {
@@ -849,7 +787,7 @@ function render() {
 
   updateStatsUI(activePulls, sRanks);
   updateFilterCounts(sRanks);
-  renderPullsUI();
+  renderPullsUI(sRanks);
 }
 
 function setCategory(catId) {
@@ -873,20 +811,6 @@ async function autoFetchCSVs() {
         const text = await res.text();
         const parsed = parsePullsFromCSV(text, catKey);
         if (parsed.length > 0) {
-          // Détection dynamique des moteurs W sans suffixe explicite
-          for (const pull of parsed) {
-            if (!pull.isEngine && !cat.defaultIsEngine) {
-              if (isEngineName(pull.agent)) {
-                pull.isEngine = true;
-              } else {
-                try {
-                  const probe = await fetch(`engines/W-Engine_${formatEngineSlug(pull.agent)}.webp`, { method: 'HEAD' });
-                  if (probe.ok) pull.isEngine = true;
-                } catch (e) {}
-              }
-            }
-          }
-
           if (cat.hasFirstGuaranteed) {
             recalculateRescreenGuarantees(parsed);
           }
@@ -955,37 +879,7 @@ function renderCategoryTabs() {
       <button id="tab-cat-${cat.id}" class="cat-tab ${state.category === cat.id ? 'active' : ''}" data-category="${cat.id}" title="Afficher les tirages : ${cat.label}">
         <span class="cat-tab-texture" aria-hidden="true">
           <svg class="cat-tab-halftone-svg" viewBox="0 0 160 50" preserveAspectRatio="none">
-            <path d="M 148 0 L 160 0 L 160 50 L 120 50 Z" fill="currentColor" />
-            <!-- Ligne 1 (cy=8, haut -> plus à droite) -->
-            <circle cx="95" cy="8" r="1.0" fill="currentColor" />
-            <circle cx="105" cy="8" r="1.6" fill="currentColor" />
-            <circle cx="115" cy="8" r="2.3" fill="currentColor" />
-            <circle cx="125" cy="8" r="3.2" fill="currentColor" />
-            <circle cx="135" cy="8" r="4.2" fill="currentColor" />
-            <!-- Ligne 2 (cy=16) -->
-            <circle cx="89" cy="16" r="1.0" fill="currentColor" />
-            <circle cx="99" cy="16" r="1.6" fill="currentColor" />
-            <circle cx="109" cy="16" r="2.3" fill="currentColor" />
-            <circle cx="119" cy="16" r="3.2" fill="currentColor" />
-            <circle cx="129" cy="16" r="4.2" fill="currentColor" />
-            <!-- Ligne 3 (cy=25) -->
-            <circle cx="83" cy="25" r="1.0" fill="currentColor" />
-            <circle cx="93" cy="25" r="1.6" fill="currentColor" />
-            <circle cx="103" cy="25" r="2.3" fill="currentColor" />
-            <circle cx="113" cy="25" r="3.2" fill="currentColor" />
-            <circle cx="123" cy="25" r="4.2" fill="currentColor" />
-            <!-- Ligne 4 (cy=34) -->
-            <circle cx="77" cy="34" r="1.0" fill="currentColor" />
-            <circle cx="87" cy="34" r="1.6" fill="currentColor" />
-            <circle cx="97" cy="34" r="2.3" fill="currentColor" />
-            <circle cx="107" cy="34" r="3.2" fill="currentColor" />
-            <circle cx="117" cy="34" r="4.2" fill="currentColor" />
-            <!-- Ligne 5 (cy=42, bas -> plus à gauche) -->
-            <circle cx="71" cy="42" r="1.0" fill="currentColor" />
-            <circle cx="81" cy="42" r="1.6" fill="currentColor" />
-            <circle cx="91" cy="42" r="2.3" fill="currentColor" />
-            <circle cx="101" cy="42" r="3.2" fill="currentColor" />
-            <circle cx="111" cy="42" r="4.2" fill="currentColor" />
+            <use href="#cat-tab-halftone" />
           </svg>
         </span>
         <img class="cat-tab-char" src="${imgUrl}" alt="${safeName(latest.name)}" onerror="handleImgError(this, '${safeName(latest.name)}', ${latest.isEngine})" loading="lazy" />
@@ -1022,10 +916,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput) {
     searchInput.addEventListener('input', e => {
       state.search = e.target.value;
-      const activePulls = getActivePulls();
-      const sRanks = expandPullsToSRanks(activePulls);
+      const sRanks = expandPullsToSRanks(getActivePulls());
       updateFilterCounts(sRanks);
-      renderPullsUI();
+      renderPullsUI(sRanks);
     });
   }
 
@@ -1068,10 +961,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-
-  // Scrollbar auto-masquage sur le conteneur de tirages
+  // Interaction et scrollbar auto-masquage sur le conteneur de tirages
   const pullsContainer = document.getElementById('pulls-container');
   if (pullsContainer) {
+    pullsContainer.addEventListener('click', e => {
+      const tile = e.target.closest('[data-item-id]');
+      if (!tile) return;
+      const id = parseInt(tile.dataset.itemId, 10);
+      const sRanks = expandPullsToSRanks(getActivePulls());
+      const item = sRanks.find(i => i.id === id);
+      if (item) openDetailModal(item);
+    });
+
     let scrollTimeout;
     pullsContainer.addEventListener('scroll', () => {
       pullsContainer.classList.add('is-scrolling');
