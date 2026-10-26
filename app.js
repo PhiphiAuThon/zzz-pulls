@@ -27,26 +27,26 @@
 const CATEGORIES = {
   character: {
     id: 'character',
-    label: 'Personnages',
+    label: 'Agents',
     icon: '👤',
     file: 'ZZZ - Character History.csv',
-    searchPlaceholder: 'Chercher un agent...',
+    searchPlaceholder: 'Recherche',
     defaultIsEngine: false
   },
   engine: {
     id: 'engine',
-    label: 'Moteurs W',
+    label: 'Moteurs-W',
     icon: '⚙️',
     file: 'ZZZ - Engine History.csv',
-    searchPlaceholder: 'Chercher un moteur W...',
+    searchPlaceholder: 'Recherche',
     defaultIsEngine: true
   },
   rescreen: {
     id: 'rescreen',
-    label: 'Rescreen',
+    label: 'Re-screens',
     icon: '🔄',
     file: 'ZZZ - Rescreen History.csv',
-    searchPlaceholder: 'Chercher un tirage Rescreen (agent ou WE)...',
+    searchPlaceholder: 'Recherche',
     hasFirstGuaranteed: true,
     defaultIsEngine: false
   }
@@ -56,7 +56,7 @@ const ALL_CATEGORY = {
   id: 'all',
   label: 'Tous',
   icon: '🔀',
-  searchPlaceholder: 'Chercher un agent ou moteur W...',
+  searchPlaceholder: 'Recherche',
   file: Object.values(CATEGORIES).map(c => c.file).join(' + ')
 };
 
@@ -548,7 +548,6 @@ function renderMatrixTile(item) {
       </div>
       <div class="matrix-bottom-bar">
         <div class="matrix-badge-combined ${badgeClass}">
-          <span class="matrix-tag-letter">${letter}</span>
           <span class="matrix-pity-num">${item.pity}</span>
         </div>
       </div>
@@ -846,13 +845,17 @@ function updateStatsUI(pulls, sRanks) {
   const streakEl = document.getElementById('stat-streak');
   if (streakEl) {
     if (stats.streak.hasFiftyFifty) {
-      streakEl.textContent = `${stats.streak.currentStreak} ${stats.streak.isWin ? 'Victoires' : 'Défaites'}`;
-      document.getElementById('stat-streak-type').textContent = stats.streak.isWin ? '🔥 En cours' : '💀 En cours';
-      document.getElementById('stat-max-streak').textContent = stats.streak.maxWinStreak;
+      streakEl.textContent = `${stats.streak.currentStreak}/${stats.streak.maxWinStreak || 0}`;
+      const streakTypeEl = document.getElementById('stat-streak-type');
+      if (streakTypeEl) streakTypeEl.textContent = '';
+      const maxStreakEl = document.getElementById('stat-max-streak');
+      if (maxStreakEl) maxStreakEl.textContent = stats.streak.maxWinStreak;
     } else {
-      streakEl.textContent = '—';
-      document.getElementById('stat-streak-type').textContent = 'Aucun 50/50';
-      document.getElementById('stat-max-streak').textContent = '0';
+      streakEl.textContent = '0/0';
+      const streakTypeEl = document.getElementById('stat-streak-type');
+      if (streakTypeEl) streakTypeEl.textContent = '';
+      const maxStreakEl = document.getElementById('stat-max-streak');
+      if (maxStreakEl) maxStreakEl.textContent = '0';
     }
   }
 
@@ -1086,6 +1089,14 @@ document.addEventListener('DOMContentLoaded', () => {
       btnMatrix.classList.remove('active');
       state.view = 'cards';
       renderPullsUI();
+    });
+  }
+
+  // Bouton Refresh
+  const btnRefresh = document.getElementById('btn-refresh');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      render();
     });
   }
 
