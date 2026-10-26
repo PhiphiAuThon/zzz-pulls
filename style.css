@@ -4,15 +4,19 @@
    ========================================================================== */
 
 :root {
-  --bg-primary: #0a0c10;
-  --bg-secondary: #12151e;
-  --bg-card: #171b26;
-  --bg-card-hover: #1e2333;
-  --bg-input: #0e1017;
+  /* Surface / Fonds sombres neutres (Charcoal ZZZ) */
+  --bg-primary: #0a0b0d;
+  --bg-secondary: #111215;
+  --bg-card: #15161a;
+  --bg-card-hover: #1b1c20;
+  --bg-input: #0e0f11;
   
-  --border-subtle: #2d3448;
-  --border-bright: #4e5a7e;
+  /* Bordures unifiées neutres */
+  --border-subtle: #24252b;
+  --border-bright: #3d404a;
+  --tile-border: #26282e;
 
+  /* Typography Colors */
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
@@ -52,9 +56,9 @@
   --radius-full: 9999px;
 
   /* Centralized Stadium Capsule Tokens */
-  --capsule-bg: #15171f;
-  --capsule-bg-hover: #1c1f2b;
-  --capsule-border: #282c3c;
+  --capsule-bg: #121316;
+  --capsule-bg-hover: #1b1c20;
+  --capsule-border: #2c2e34;
   --capsule-border-hover: #ffffff;
   --capsule-text: #9ca3af;
   --capsule-text-hover: #ffffff;
@@ -85,11 +89,12 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: 
+  background-color: var(--bg-primary);
+  background-image: 
     radial-gradient(circle at 15% 15%, rgba(248, 225, 25, 0.05) 0%, transparent 45%),
     radial-gradient(circle at 85% 85%, rgba(247, 37, 133, 0.04) 0%, transparent 45%),
-    radial-gradient(rgba(255, 255, 255, 0.05) 1.2px, transparent 1.6px);
-  background-size: 100% 100%, 100% 100%, 16px 16px;
+    radial-gradient(rgba(255, 255, 255, 0.12) 1.2px, transparent 1.6px);
+  background-size: 100% 100%, 100% 100%, 12px 12px;
   pointer-events: none;
   z-index: 0;
 }
@@ -163,8 +168,8 @@ body::before {
 
 .cat-tab.active {
   color: var(--zzz-yellow);
-  border-color: var(--zzz-yellow);
-  box-shadow: 0 0 16px var(--zzz-yellow-glow);
+  border: 2.5px solid var(--zzz-yellow);
+  box-shadow: 0 0 18px var(--zzz-yellow-glow);
 }
 
 .header-actions {
@@ -175,16 +180,19 @@ body::before {
 
 .btn-primary {
   padding: 8px 20px;
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+  border-color: #ffffff;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
 }
 
 .btn-group {
   display: flex;
   background-color: var(--capsule-bg);
-  padding: 4px;
+  padding: 3px;
   border-radius: var(--radius-full);
   border: 2px solid var(--capsule-border);
 }
@@ -192,7 +200,7 @@ body::before {
 .btn-group .btn-tab {
   border: none;
   background: transparent;
-  padding: 8px 22px;
+  padding: 7px 22px;
   border-radius: var(--radius-full);
 }
 
@@ -217,7 +225,7 @@ body::before {
 .stat-chip {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   padding: 10px 18px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
@@ -233,7 +241,7 @@ body::before {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: #0e1017;
+  background-color: var(--bg-input);
   border: 2px solid var(--capsule-border);
   display: flex;
   align-items: center;
@@ -246,6 +254,7 @@ body::before {
 }
 
 .currency-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -293,20 +302,14 @@ body::before {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 24px;
-}
-
-.filter-left {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .filter-pills {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .filter-pill {
@@ -343,6 +346,7 @@ body::before {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 0 1 380px;
 }
 
 .search-box input {
@@ -354,12 +358,11 @@ body::before {
   font-size: 0.88rem;
   font-weight: 600;
   outline: none;
-  width: 260px;
+  width: 100%;
   transition: all 0.2s ease;
 }
 
 .search-box input:focus {
-  width: 290px;
   border-color: var(--zzz-yellow);
   box-shadow: 0 0 12px var(--zzz-yellow-glow);
 }
@@ -446,7 +449,7 @@ body::before {
    ========================================================================== */
 .pulls-grid-matrix {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(11, 1fr);
   gap: 14px;
   width: 100%;
 }
@@ -456,8 +459,8 @@ body::before {
   aspect-ratio: 1 / 1;
   width: 100%;
   border-radius: 50%;
-  background-color: #10121a;
-  border: 2.5px solid #222634;
+  background-color: var(--capsule-bg);
+  border: 3.5px solid var(--tile-border);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
   display: flex;
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
@@ -484,35 +487,40 @@ body::before {
 
 .matrix-pity-badge {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 26px;
-  height: 26px;
+  bottom: 0px;
+  right: 0px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #0b0c12;
+  border: 1.5px solid #000000;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
   z-index: 10;
 }
 
 .matrix-pity-num {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 900;
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   color: #000000;
   line-height: 1;
   text-align: center;
   letter-spacing: -0.5px;
-  transform: translateY(-0.5px);
 }
 
-.refresh-bar {
+.bottom-bar {
+  position: relative;
   display: flex;
   justify-content: center;
-  margin-top: 32px;
+  align-items: center;
+  margin-top: 36px;
   margin-bottom: 24px;
+}
+
+.bottom-bar .refresh-bar {
+  margin: 0;
 }
 
 .btn-refresh {
@@ -522,6 +530,15 @@ body::before {
 
 .btn-refresh:hover {
   box-shadow: 0 0 14px rgba(255, 255, 255, 0.2);
+}
+
+.footer-source {
+  position: absolute;
+  right: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #4b5266;
+  letter-spacing: 0.3px;
 }
 
 /* ==========================================================================
@@ -984,7 +1001,7 @@ body::before {
 /* ==========================================================================
    9. MEDIA QUERIES RESPONSIVE
    ========================================================================== */
-@media (max-width: 1360px) {
+@media (max-width: 1280px) {
   .pulls-grid-matrix {
     grid-template-columns: repeat(10, 1fr);
     gap: 12px;
@@ -996,11 +1013,34 @@ body::before {
     grid-template-columns: repeat(8, 1fr);
     gap: 10px;
   }
+
+  .search-box {
+    flex: 0 1 280px;
+  }
 }
 
 @media (max-width: 768px) {
   .stats-strip {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-pills {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .search-box {
+    width: 100%;
+    max-width: none;
+  }
+
+  .filter-right {
+    justify-content: center;
   }
 
   .pulls-grid-matrix {
@@ -1011,6 +1051,16 @@ body::before {
   .pull-card {
     grid-template-columns: 1fr;
     gap: 14px;
+  }
+
+  .bottom-bar {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .footer-source {
+    position: static;
+    text-align: center;
   }
 }
 

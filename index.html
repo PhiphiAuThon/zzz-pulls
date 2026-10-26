@@ -84,30 +84,28 @@
       </div>
     </section>
 
-    <!-- Filter & Search Toolbar -->
+    <!-- Filter & Search Toolbar (3 Balanced Columns) -->
     <div class="filter-bar">
-      <div class="filter-left">
-        <!-- Filter pills -->
-        <div class="filter-pills">
-          <button class="filter-pill active" data-filter="all">Tous</button>
-          <button class="filter-pill" data-filter="win" data-status="win">50/50 Gagnés</button>
-          <button class="filter-pill" data-filter="loss" data-status="loss">50/50 Perdus</button>
-          <button class="filter-pill" data-filter="guaranteed" data-status="guaranteed">Garantis</button>
-        </div>
-
-        <!-- Search input -->
-        <div class="search-box">
-          <span class="search-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </span>
-          <input id="search-input" type="text" placeholder="Recherche" />
-        </div>
+      <!-- Filter pills (Left) -->
+      <div class="filter-pills">
+        <button class="filter-pill active" data-filter="all">Tous</button>
+        <button class="filter-pill" data-filter="win" data-status="win">50/50 Gagnés</button>
+        <button class="filter-pill" data-filter="loss" data-status="loss">50/50 Perdus</button>
+        <button class="filter-pill" data-filter="guaranteed" data-status="guaranteed">Garantis</button>
       </div>
 
+      <!-- Search input (Center) -->
+      <div class="search-box">
+        <span class="search-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
+        <input id="search-input" type="text" placeholder="Recherche" />
+      </div>
+
+      <!-- Sort selector (Right) -->
       <div class="filter-right">
-        <!-- Sort selector -->
-        <select id="sort-select" class="sort-select">
-          <option value="newest">Sort : Récents</option>
+        <select id="sort-select" class="sort-select" aria-label="Trier">
+          <option value="newest">Sort</option>
           <option value="oldest">Sort : Anciens</option>
           <option value="pity-high">Sort : Pity Max</option>
           <option value="pity-low">Sort : Pity Min</option>
@@ -120,9 +118,14 @@
       <!-- Rendered by app.js -->
     </main>
 
-    <!-- Centered Refresh Action Button as seen on Mockup -->
-    <div class="refresh-bar">
-      <button id="btn-refresh" class="btn-refresh" title="Actualiser l'affichage">Refresh</button>
+    <!-- Bottom Action & Attribution -->
+    <div class="bottom-bar">
+      <div class="refresh-bar">
+        <button id="btn-refresh" class="btn-refresh" title="Actualiser l'affichage">Refresh</button>
+      </div>
+      <div class="footer-source">
+        <span>Data source: ZZZ History CSV</span>
+      </div>
     </div>
 
   <!-- Detail Popover Modal -->
