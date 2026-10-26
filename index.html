@@ -9,17 +9,10 @@
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
-    <header>
-      <div class="brand">
-        <div class="brand-icon">Z</div>
-        <div class="brand-title">
-          <h1>
-            ZZZ 50/50 TRACKER
-            <span class="badge-sub">rng.moe style</span>
-          </h1>
-          <p>Historique et statistiques de vos tirages de bannières limitées</p>
-        </div>
+    <!-- Navigation par Catégorie et Actions -->
+    <nav class="category-nav">
+      <div id="category-tabs" class="category-tabs">
+        <!-- Rendered dynamically by app.js -->
       </div>
 
       <div class="header-actions">
@@ -35,92 +28,40 @@
           <span>Importer CSV</span>
         </button>
       </div>
-    </header>
-
-    <!-- Navigation par Catégorie : Dynamique d'après CATEGORIES dans app.js -->
-    <nav class="category-nav">
-      <div id="category-tabs" class="category-tabs">
-        <!-- Rendered dynamically by app.js -->
-      </div>
     </nav>
 
-    <!-- Statistics Dashboard (rng.moe style) -->
-    <section class="stats-grid">
-      <!-- 50/50 Win Rate -->
-      <div class="stat-card card-winrate">
-        <div class="stat-header">
-          <span class="stat-label">Taux 50/50</span>
-          <span class="stat-icon">🎯</span>
-        </div>
-        <div class="stat-value-container">
-          <span id="stat-winrate" class="stat-value">—</span>
-        </div>
-        <div class="stat-desc">
-          <span class="stat-highlight win"><span id="stat-win-count">0</span> Gagnés</span>
-          <span> / </span>
-          <span class="stat-highlight loss"><span id="stat-loss-count">0</span> Perdus</span>
-        </div>
-        <div class="progress-bar-container">
+    <!-- Statistics Inline Strip -->
+    <section class="stats-strip">
+      <div class="stat-chip chip-winrate">
+        <span class="chip-icon">🎯</span>
+        <span class="chip-label">50/50 :</span>
+        <strong id="stat-winrate" class="chip-value">—</strong>
+        <span class="chip-sub">(<span id="stat-win-count" class="stat-highlight win">0</span>W / <span id="stat-loss-count" class="stat-highlight loss">0</span>L)</span>
+        <div class="progress-bar-container mini">
           <div id="progress-win" class="progress-bar-win" style="width: 0%"></div>
           <div id="progress-loss" class="progress-bar-loss" style="width: 0%"></div>
         </div>
       </div>
 
-      <!-- Streaks -->
-      <div class="stat-card card-streak">
-        <div class="stat-header">
-          <span class="stat-label">Série Active</span>
-          <span class="stat-icon">🔥</span>
-        </div>
-        <div class="stat-value-container">
-          <span id="stat-streak" class="stat-value">—</span>
-        </div>
-        <div class="stat-desc">
-          <span id="stat-streak-type">🔥 En cours</span> • Record : <strong id="stat-max-streak">0</strong> d'affilée
-        </div>
+      <div class="stat-chip chip-streak">
+        <span class="chip-icon">🔥</span>
+        <span class="chip-label">Série :</span>
+        <strong id="stat-streak" class="chip-value">—</strong>
+        <span class="chip-sub">(<span id="stat-streak-type">En cours</span> • Max : <strong id="stat-max-streak">0</strong>)</span>
       </div>
 
-      <!-- Total Pulls & Polychromes -->
-      <div class="stat-card card-pulls">
-        <div class="stat-header">
-          <span class="stat-label">Tirages Totaux</span>
-          <span class="stat-icon">🎟️</span>
-        </div>
-        <div class="stat-value-container">
-          <span id="stat-total-pulls" class="stat-value">—</span>
-        </div>
-        <div class="stat-desc">
-          ≈ <strong id="stat-polychromes">—</strong> Polychromes
-        </div>
+      <div class="stat-chip chip-pity">
+        <span class="chip-icon">📊</span>
+        <span class="chip-label">Pity moy. :</span>
+        <strong id="stat-avg-srank" class="chip-value">—</strong>
+        <span class="chip-sub">(Limité : <strong id="stat-avg-limited">—</strong>)</span>
       </div>
 
-      <!-- S-Ranks Count -->
-      <div class="stat-card card-sranks">
-        <div class="stat-header">
-          <span class="stat-label">Total Rangs S</span>
-          <span class="stat-icon">👑</span>
-        </div>
-        <div class="stat-value-container">
-          <span id="stat-total-sranks" class="stat-value">—</span>
-        </div>
-        <div class="stat-desc">
-          <strong><span id="stat-limited-sranks">0</span></strong> Limités • <strong><span id="stat-standard-sranks">0</span></strong> Permanents
-        </div>
-      </div>
-
-      <!-- Average Pity -->
-      <div class="stat-card card-pity">
-        <div class="stat-header">
-          <span class="stat-label">Pity Moyenne</span>
-          <span class="stat-icon">📊</span>
-        </div>
-        <div class="stat-value-container">
-          <span id="stat-avg-srank" class="stat-value">—</span>
-          <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">/ S-Rank</span>
-        </div>
-        <div class="stat-desc">
-          Moyenne par Rang S limité : <strong id="stat-avg-limited">—</strong>
-        </div>
+      <div class="stat-chip chip-pulls">
+        <span class="chip-icon">🎟️</span>
+        <span class="chip-label">Tirages :</span>
+        <strong id="stat-total-pulls" class="chip-value">—</strong>
+        <span class="chip-sub">(≈ <span id="stat-polychromes">—</span> poly)</span>
       </div>
     </section>
 

@@ -857,13 +857,20 @@ function updateStatsUI(pulls, sRanks) {
   }
 
   // Totaux & Moyennes
-  document.getElementById('stat-total-pulls').textContent = stats.totalPulls.toLocaleString();
-  document.getElementById('stat-polychromes').textContent = stats.polychromes.toLocaleString();
-  document.getElementById('stat-total-sranks').textContent = stats.totalSRanks;
-  document.getElementById('stat-limited-sranks').textContent = pulls.length;
-  document.getElementById('stat-standard-sranks').textContent = stats.losses;
-  document.getElementById('stat-avg-srank').textContent = stats.avgPitySRank;
-  document.getElementById('stat-avg-limited').textContent = stats.avgPityLimited;
+  const totalPullsEl = document.getElementById('stat-total-pulls');
+  if (totalPullsEl) totalPullsEl.textContent = stats.totalPulls.toLocaleString();
+  const polyEl = document.getElementById('stat-polychromes');
+  if (polyEl) polyEl.textContent = stats.polychromes.toLocaleString();
+  const totalSRanksEl = document.getElementById('stat-total-sranks');
+  if (totalSRanksEl) totalSRanksEl.textContent = stats.totalSRanks;
+  const limSRanksEl = document.getElementById('stat-limited-sranks');
+  if (limSRanksEl) limSRanksEl.textContent = pulls.length;
+  const stdSRanksEl = document.getElementById('stat-standard-sranks');
+  if (stdSRanksEl) stdSRanksEl.textContent = stats.losses;
+  const avgSrankEl = document.getElementById('stat-avg-srank');
+  if (avgSrankEl) avgSrankEl.textContent = stats.avgPitySRank;
+  const avgLimEl = document.getElementById('stat-avg-limited');
+  if (avgLimEl) avgLimEl.textContent = stats.avgPityLimited;
 
   // Répartition des pertes
   renderLossDistribution(stats.lossDistribution);
