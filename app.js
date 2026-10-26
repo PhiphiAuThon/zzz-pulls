@@ -148,9 +148,9 @@ function formatEngineSlug(name) {
 function getSvgFallback(name, isEngine = false) {
   const clean = cleanAgentName(name);
   const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
-  const bgColor = isEngine ? '%231a202c' : '%23252a3a';
-  const textColor = isEngine ? '%2338bdf8' : '%23f8e119';
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="${bgColor}" width="100" height="100"/><text fill="${textColor}" font-size="14" font-weight="bold" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(label)}</text></svg>`;
+  const bgColor = '%230a0b0d';
+  const textColor = (name && name.includes('?')) ? '%239ca3af' : (isEngine ? '%2338bdf8' : '%239ca3af');
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="${bgColor}" width="100" height="100"/><text fill="${textColor}" font-family="Barlow Semi Condensed, Chakra Petch, sans-serif" font-size="36" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(label)}</text></svg>`;
 }
 
 function getPortraitUrl(name, isEngine = false) {
