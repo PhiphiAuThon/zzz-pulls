@@ -302,23 +302,6 @@ function parsePullsFromCSV(csvText, categoryKey) {
   return pulls;
 }
 
-function recalculateRescreenGuarantees(pulls) {
-  const seenChars = new Set();
-  const seenEngines = new Set();
-  for (const p of pulls) {
-    if (!p.isLoss) {
-      const patchKey = p.patch.split('->')[0].trim();
-      const seen = p.isEngine ? seenEngines : seenChars;
-      if (!seen.has(patchKey)) {
-        seen.add(patchKey);
-        p.isGuaranteedFirst = true;
-      } else {
-        p.isGuaranteedFirst = false;
-      }
-    }
-  }
-}
-
 // ==========================================================================
 // 4. ETAT CENTRAL DE L'APPLICATION
 // ==========================================================================
@@ -328,13 +311,13 @@ const state = {
   search: '',
   sort: 'newest', // 'newest', 'oldest', 'pity-high', 'pity-low'
   view: 'matrix', // 'matrix', 'cards'
-  data: {}
+  data: {},
+  sRanks: [] // Cache des tirages S-Rank pour la catégorie active
 };
 
-// Initialisation des données à partir des fallbacks
-Object.keys(CATEGORIES).forEach(key => {
-  state.data[key] = parsePullsFromCSV(FALLBACK_CSVS[key] || '', key);
-});
+function updateActiveSRanks() {
+  state.sRanks = expandPullsToSRanks(getActivePulls());
+}
 
 // ==========================================================================
 // 5. MODELE DE DONNEES & CALCUL DES STATISTIQUES (FONCTIONS PURES)
@@ -379,24 +362,30 @@ function expandPullsToSRanks(pulls) {
         lossPatch = parts[0] || p.patch;
         guarPatch = parts[1] || parts[0] || p.patch;
       }
+      const targetAgent = p.bannerFrom || p.agent;
       items.push({
         id: items.length + 1,
         pullId: p.id,
         agent: p.lostAgent,
+        safeAgent: safeName(p.lostAgent),
+        imgUrl: getPortraitUrl(p.lostAgent, isEngine),
         pity: p.lostPity,
         status: 'loss',
         patch: lossPatch,
-        targetAgent: p.bannerFrom || p.agent,
+        targetAgent,
         bannerFrom: p.bannerFrom,
         totalCycle: p.total,
         type: p.type,
         isEngine,
-        isRescreenFirst: false
+        isRescreenFirst: false,
+        searchKey: `${p.lostAgent} ${cleanAgentName(p.lostAgent)} ${targetAgent} ${lossPatch}`.toLowerCase()
       });
       items.push({
         id: items.length + 1,
         pullId: p.id,
         agent: p.agent,
+        safeAgent: safeName(p.agent),
+        imgUrl: getPortraitUrl(p.agent, isEngine),
         pity: p.cost,
         status: 'guaranteed',
         patch: guarPatch,
@@ -404,13 +393,16 @@ function expandPullsToSRanks(pulls) {
         totalCycle: p.total,
         type: p.type,
         isEngine,
-        isRescreenFirst: false
+        isRescreenFirst: false,
+        searchKey: `${p.agent} ${cleanAgentName(p.agent)} ${p.lostAgent || ''} ${guarPatch}`.toLowerCase()
       });
     } else {
       items.push({
         id: items.length + 1,
         pullId: p.id,
         agent: p.agent,
+        safeAgent: safeName(p.agent),
+        imgUrl: getPortraitUrl(p.agent, isEngine),
         pity: p.cost,
         status: p.isGuaranteedFirst ? 'guaranteed' : 'win',
         patch: p.patch,
@@ -418,7 +410,8 @@ function expandPullsToSRanks(pulls) {
         totalCycle: p.total,
         type: p.type,
         isEngine,
-        isRescreenFirst: Boolean(p.isGuaranteedFirst)
+        isRescreenFirst: Boolean(p.isGuaranteedFirst),
+        searchKey: `${p.agent} ${cleanAgentName(p.agent)} ${p.bannerFrom || ''} ${p.patch}`.toLowerCase()
       });
     }
   });
@@ -479,44 +472,18 @@ function computeStats(pulls, sRankItems) {
 function matchesSearch(item, query) {
   if (!query) return true;
   const q = query.toLowerCase().trim();
-  const agent = (item.agent || '').toLowerCase();
-  const clean = cleanAgentName(item.agent).toLowerCase();
-  const targetAgent = (item.targetAgent || item.lostAgent || '').toLowerCase();
-  const patch = (item.patch || '').toLowerCase();
-  const isEngine = isEnginePull(item);
-  const isEngKw = isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
+  const isEngKw = item.isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
   const isRescreenKw = item.type === 'rescreen' && q.includes('rescreen');
-  return agent.includes(q) || clean.includes(q) || targetAgent.includes(q) || patch.includes(q) || isEngKw || isRescreenKw;
+  return item.searchKey.includes(q) || isEngKw || isRescreenKw;
 }
 
-function filterAndSortEntries(entries, { filter, search, sort }) {
-  const filtered = entries.filter(item => {
-    const status = getItemStatus(item);
-    if (filter === 'win' && status !== 'win') return false;
-    if (filter === 'loss' && status !== 'loss') return false;
-    if (filter === 'guaranteed' && status !== 'guaranteed') return false;
-    return matchesSearch(item, search);
-  });
-
-  filtered.sort((a, b) => {
-    const costA = a.pity !== undefined ? a.pity : a.total;
-    const costB = b.pity !== undefined ? b.pity : b.total;
-    if (sort === 'newest') return b.id - a.id;
-    if (sort === 'oldest') return a.id - b.id;
-    if (sort === 'pity-high') return costB - costA;
-    if (sort === 'pity-low') return costA - costB;
-    return 0;
-  });
-
-  return filtered;
-}
 
 // ==========================================================================
 // 7. RENDU HTML : TUILES, CARTES & MODALES
 // ==========================================================================
 function renderMatrixTile(item) {
   const status = getItemStatus(item);
-  const isEngine = isEnginePull(item);
+  const isEngine = item.isEngine;
   const kindLabel = isEngine ? 'Moteur W' : 'Agent';
   const statusTitle = status === 'win'
     ? '50/50 Gagné'
@@ -527,7 +494,7 @@ function renderMatrixTile(item) {
   const isUnknown = Boolean(item.agent && item.agent.includes('?'));
   const mediaHtml = isUnknown
     ? `<div class="matrix-unknown agent-unknown">???</div>`
-    : `<img class="matrix-img" src="${getPortraitUrl(item.agent, isEngine)}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />`;
+    : `<img class="matrix-img" src="${item.imgUrl}" alt="${item.safeAgent}" loading="lazy" onerror="handleImgError(this, '${item.safeAgent}', ${isEngine})" />`;
 
   return `
     <div class="matrix-tile" data-status="${status}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${kindLabel} : ${item.agent} (${statusTitle}) - ${item.pity} tirages">
@@ -541,10 +508,9 @@ function renderMatrixTile(item) {
 
 function renderPullCard(item) {
   const status = getItemStatus(item);
-  const isEngine = isEnginePull(item);
+  const isEngine = item.isEngine;
   const isUnknown = Boolean(item.agent && item.agent.includes('?'));
   const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
-  const portraitUrl = getPortraitUrl(item.agent, isEngine);
 
   let statusBadgeText = '50/50 GAGNÉ';
   if (status === 'loss') {
@@ -558,7 +524,7 @@ function renderPullCard(item) {
 
   const bannerMediaHtml = isUnknown
     ? `<div class="pull-banner-unknown agent-unknown">???</div>`
-    : `<img class="pull-banner-img ${isEngine ? 'is-engine' : ''}" src="${portraitUrl}" alt="${item.agent}" loading="lazy" onerror="handleImgError(this, '${safeName(item.agent)}', ${isEngine})" />`;
+    : `<img class="pull-banner-img ${isEngine ? 'is-engine' : ''}" src="${item.imgUrl}" alt="${item.safeAgent}" loading="lazy" onerror="handleImgError(this, '${item.safeAgent}', ${isEngine})" />`;
 
   return `
     <div class="pull-card" data-status="${status}" data-item-id="${item.id}" data-pull-id="${item.pullId || item.id}">
@@ -740,37 +706,19 @@ function updateStatsUI(pulls, sRanks) {
   if (searchInput) searchInput.placeholder = activeCatConfig.searchPlaceholder;
 }
 
-function renderPullsUI(sourceItems) {
+function updatePullsAndFilterUI() {
   const container = document.getElementById('pulls-container');
   if (!container) return;
 
-  const items = sourceItems || expandPullsToSRanks(getActivePulls());
-  const isMatrix = state.view === 'matrix';
+  // 1. Filtrer d'abord par le texte de recherche
+  const searchItems = state.search ? state.sRanks.filter(item => matchesSearch(item, state.search)) : state.sRanks;
 
-  const filtered = filterAndSortEntries(items, {
-    filter: state.filter,
-    search: state.search,
-    sort: state.sort
-  });
-
-  if (filtered.length === 0) {
-    container.className = '';
-    container.innerHTML = `<div class="empty-state"><p>Aucun tirage ne correspond à vos filtres.</p></div>`;
-    return;
-  }
-
-  container.className = isMatrix ? 'pulls-grid-matrix' : 'pulls-container';
-  container.innerHTML = filtered.map(item => isMatrix ? renderMatrixTile(item) : renderPullCard(item)).join('');
-}
-
-function updateFilterCounts(items) {
-  const searchItems = state.search ? items.filter(item => matchesSearch(item, state.search)) : items;
-
+  // 2. Mettre à jour les compteurs des filtres
   const counts = { all: searchItems.length, win: 0, loss: 0, guaranteed: 0 };
-  searchItems.forEach(item => {
-    const s = getItemStatus(item);
+  for (let i = 0; i < searchItems.length; i++) {
+    const s = getItemStatus(searchItems[i]);
     if (counts[s] !== undefined) counts[s]++;
-  });
+  }
 
   document.querySelectorAll('.filter-pill').forEach(pill => {
     const f = pill.dataset.filter;
@@ -779,19 +727,41 @@ function updateFilterCounts(items) {
       countEl.textContent = `(${counts[f]})`;
     }
   });
+
+  // 3. Filtrer par statut sélectionné
+  const filtered = state.filter === 'all'
+    ? searchItems.slice()
+    : searchItems.filter(item => getItemStatus(item) === state.filter);
+
+  if (filtered.length === 0) {
+    container.className = '';
+    container.innerHTML = `<div class="empty-state"><p>Aucun tirage ne correspond à vos filtres.</p></div>`;
+    return;
+  }
+
+  // 4. Trier
+  filtered.sort((a, b) => {
+    if (state.sort === 'newest') return b.id - a.id;
+    if (state.sort === 'oldest') return a.id - b.id;
+    if (state.sort === 'pity-high') return (b.pity || 0) - (a.pity || 0);
+    if (state.sort === 'pity-low') return (a.pity || 0) - (b.pity || 0);
+    return 0;
+  });
+
+  const isMatrix = state.view === 'matrix';
+  container.className = isMatrix ? 'pulls-grid-matrix' : 'pulls-container';
+  container.innerHTML = filtered.map(item => isMatrix ? renderMatrixTile(item) : renderPullCard(item)).join('');
 }
 
 function render() {
   const activePulls = getActivePulls();
-  const sRanks = expandPullsToSRanks(activePulls);
-
-  updateStatsUI(activePulls, sRanks);
-  updateFilterCounts(sRanks);
-  renderPullsUI(sRanks);
+  updateStatsUI(activePulls, state.sRanks);
+  updatePullsAndFilterUI();
 }
 
 function setCategory(catId) {
   state.category = catId;
+  updateActiveSRanks();
   document.querySelectorAll('.cat-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.category === catId);
   });
@@ -801,33 +771,35 @@ function setCategory(catId) {
 // ==========================================================================
 // 9. CHARGEMENT AUTOMATIQUE DES FICHIERS CSV (HTTP / GITHUB PAGES)
 // ==========================================================================
-async function autoFetchCSVs() {
-  let updatedAny = false;
+async function loadCSVData() {
+  let loadedFromNetwork = false;
 
-  await Promise.all(Object.entries(CATEGORIES).map(async ([catKey, cat]) => {
-    try {
-      const res = await fetch(encodeURI(cat.file) + '?v=' + Date.now());
-      if (res.ok) {
-        const text = await res.text();
-        const parsed = parsePullsFromCSV(text, catKey);
-        if (parsed.length > 0) {
-          if (cat.hasFirstGuaranteed) {
-            recalculateRescreenGuarantees(parsed);
-          }
+  try {
+    const results = await Promise.all(Object.entries(CATEGORIES).map(async ([catKey, cat]) => {
+      const res = await fetch(encodeURI(cat.file), { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const parsed = parsePullsFromCSV(text, catKey);
+      return { catKey, parsed };
+    }));
 
-          state.data[catKey] = parsed;
-          updatedAny = true;
-        }
-      }
-    } catch (err) {
-      // Échec normal en local via le protocole file://
-    }
-  }));
+    results.forEach(({ catKey, parsed }) => {
+      if (parsed.length > 0) state.data[catKey] = parsed;
+    });
+    loadedFromNetwork = true;
+  } catch (err) {
+    // En local (protocole file://) ou hors ligne : chargement depuis les fallbacks
+    Object.keys(CATEGORIES).forEach(key => {
+      state.data[key] = parsePullsFromCSV(FALLBACK_CSVS[key] || '', key);
+    });
+  }
 
-  if (updatedAny) {
-    console.info(`✓ Données CSV chargées automatiquement (${Object.keys(CATEGORIES).map(k => `${k}: ${state.data[k].length}`).join(', ')})`);
-    renderCategoryTabs();
-    render();
+  updateActiveSRanks();
+  renderCategoryTabs();
+  render();
+
+  if (loadedFromNetwork) {
+    console.info(`✓ Données CSV chargées (${Object.keys(CATEGORIES).map(k => `${k}: ${state.data[k].length}`).join(', ')})`);
   }
 }
 
@@ -887,10 +859,6 @@ function renderCategoryTabs() {
       </button>
     `;
   }).join('');
-
-  container.querySelectorAll('.cat-tab').forEach(tab => {
-    tab.addEventListener('click', () => setCategory(tab.dataset.category));
-  });
 }
 
 function renderImportRadios() {
@@ -906,19 +874,26 @@ function renderImportRadios() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderCategoryTabs();
   renderImportRadios();
-  render();
-  autoFetchCSVs();
+  loadCSVData();
+
+  // Délégation de clics pour les onglets de catégories
+  const categoryTabs = document.getElementById('category-tabs');
+  if (categoryTabs) {
+    categoryTabs.addEventListener('click', e => {
+      const tab = e.target.closest('.cat-tab');
+      if (tab && tab.dataset.category) {
+        setCategory(tab.dataset.category);
+      }
+    });
+  }
 
   // Recherche textuelle
   const searchInput = document.getElementById('search-input');
   if (searchInput) {
     searchInput.addEventListener('input', e => {
       state.search = e.target.value;
-      const sRanks = expandPullsToSRanks(getActivePulls());
-      updateFilterCounts(sRanks);
-      renderPullsUI(sRanks);
+      updatePullsAndFilterUI();
     });
   }
 
@@ -929,7 +904,7 @@ document.addEventListener('DOMContentLoaded', () => {
       filterPills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       state.filter = pill.dataset.filter;
-      renderPullsUI();
+      updatePullsAndFilterUI();
     });
   });
 
@@ -938,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sortSelect) {
     sortSelect.addEventListener('change', e => {
       state.sort = e.target.value;
-      renderPullsUI();
+      updatePullsAndFilterUI();
     });
   }
 
@@ -950,14 +925,14 @@ document.addEventListener('DOMContentLoaded', () => {
       btnMatrix.classList.add('active');
       btnCards.classList.remove('active');
       state.view = 'matrix';
-      renderPullsUI();
+      updatePullsAndFilterUI();
     });
 
     btnCards.addEventListener('click', () => {
       btnCards.classList.add('active');
       btnMatrix.classList.remove('active');
       state.view = 'cards';
-      renderPullsUI();
+      updatePullsAndFilterUI();
     });
   }
 
@@ -968,8 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tile = e.target.closest('[data-item-id]');
       if (!tile) return;
       const id = parseInt(tile.dataset.itemId, 10);
-      const sRanks = expandPullsToSRanks(getActivePulls());
-      const item = sRanks.find(i => i.id === id);
+      const item = state.sRanks.find(i => i.id === id);
       if (item) openDetailModal(item);
     });
 
