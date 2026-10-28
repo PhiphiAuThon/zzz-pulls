@@ -1,255 +1,80 @@
 /**
- * ZZZ 50/50 TRACKER (rng.moe style)
- * Logic for parsing, statistics computation, rendering, and filtering.
+ * ZZZ 50/50 TRACKER
+ * Architecture unifiée : modèle direct, zéro code défensif, délégation d'événements.
+ * Règle d'or : aucune liste hardcodée de personnages ou moteurs.
  */
 
-/* ==========================================================================
- * ATTENTION / REGLE D'OR ABSOLUE :
- * NE JAMAIS HARDCODER DE DICTIONNAIRE OU LISTE D'AGENTS / DE MOTEURS ICI !
- * (Pas de PORTRAIT_MAP, ENGINE_MAP, ENGINE_TO_CHAR, ENGINE_ALIASES, etc.)
- *
- * Raison :
- * L'utilisateur met à jour ses bases de données CSV directement ("ZZZ - Character History.csv",
- * "ZZZ - Engine History.csv", "ZZZ - Rescreen History.csv") et ajoute des images dans
- * "characters/" et "engines/". Il ne doit JAMAIS avoir à éditer du code JS lors
- * de l'ajout de nouveaux personnages ou de nouveaux moteurs W.
- *
- * Toute la résolution d'URL d'images et de détection de type doit rester 100% DYNAMIQUE :
- * - Convention personnages : characters/<slug>.webp (minuscule, espaces/tirets -> underscores)
- * - Convention moteurs W   : engines/W-Engine_<Slug_Avec_Casse>.webp
- * - Gestion d'erreur (handleImgError) : bascule dynamique et automatique entre characters/ et engines/
- *   en cas de 404, puis fallback SVG dynamique avec initiales si le fichier est introuvable.
- * ========================================================================== */
-
-// ==========================================================================
-// 1. CONFIGURATION DECLARATIVE DES CATEGORIES
-// ==========================================================================
+// 1. CONFIGURATION DES CATEGORIES
 const CATEGORIES = {
-  character: {
-    id: 'character',
-    label: 'Agents',
-    icon: '👤',
-    file: 'ZZZ - Character History.csv',
-    searchPlaceholder: 'Recherche',
-    defaultIsEngine: false
-  },
-  engine: {
-    id: 'engine',
-    label: 'Moteurs-W',
-    icon: '⚙️',
-    file: 'ZZZ - Engine History.csv',
-    searchPlaceholder: 'Recherche',
-    defaultIsEngine: true
-  },
-  rescreen: {
-    id: 'rescreen',
-    label: 'Re-screens',
-    icon: '🔄',
-    file: 'ZZZ - Rescreen History.csv',
-    searchPlaceholder: 'Recherche',
-    hasFirstGuaranteed: true,
-    defaultIsEngine: false
-  }
+  character: { id: 'character', label: 'Agents', file: 'ZZZ - Character History.csv', isEngine: false },
+  engine: { id: 'engine', label: 'Moteurs-W', file: 'ZZZ - Engine History.csv', isEngine: true },
+  rescreen: { id: 'rescreen', label: 'Re-screens', file: 'ZZZ - Rescreen History.csv', isEngine: false, hasFirstGuar: true }
 };
 
-const ALL_CATEGORY = {
-  id: 'all',
-  label: 'Tous',
-  icon: '🔀',
-  searchPlaceholder: 'Recherche',
-  file: Object.values(CATEGORIES).map(c => c.file).join(' + ')
+const ALL_CAT = { id: 'all', label: 'Tous' };
+
+// 2. ETAT DE L'APPLICATION
+const state = {
+  category: 'character',
+  filter: 'all',
+  search: '',
+  sort: 'newest',
+  view: 'matrix',
+  cycles: { character: [], engine: [], rescreen: [] },
+  items: []
 };
 
-// Données initiales embarquées (fallback hors-ligne / protocole file://)
-const FALLBACK_CSVS = {
-  character: `Patch,Agent,Cost,,Total,Multi,50/50 L Agent
-"1.0",Ellen,80,10,90,9,Koleda
-,Zhu Yuan,70,,70,7,
-"1.1",Jane,80,80,160,16,Grace
-"1.2",Burnice,80,73,153,16,Soldier 11
-"1.3 / 1.4",Lighter -> Miyabi,20,75,95,10,Nekomata
-"1.5",Astra,30,80,110,11,Lycaon
-,Evelyn,75,,75,8,
-"1.6",SAnby,75,90,165,17,Grace
-,Trigger,65,,65,7,
-"1.7",Vivian,80,,80,8,
-"2.0",Yixuan,60,,60,6,
-,Yixuan,30,,30,3,
-,Jufufu,40,80,120,12,Grace
-,Caesar,71,,71,8,
-"2.2",Seed,80,,80,8,
-,Orphie,60,,60,6,
-2.3,Lucia,20,,20,2,
-"2.3 / 2.4",Yidhari -> Dialyn,80,70,150,15,Lycaon
-"2.4 / 2.5",Banyue -> YSG,80,70,150,15,Grace
-"2.6",Yixuan,10,,10,1,
-"2.6",Yuzuha,80,80,160,16,Soldier 11
-"2.8",Promeia,80,,80,8,
-3.0,Velina,80,,80,8,
-3.1,Remielle,10,,10,1,
-,Remielle,50,,50,5,
-,Remielle,70,,70,7,
-,Sigrid,30,,30,3,
-"3.2",Promeia,80,60,140,14,Zhu Yuan`,
-  engine: `Patch,Agent,Cost,,Total,Multi,50/50 L Agent
-"2.6",Qingming Birdcage,40,,40,4,
-"2.7",Cordis Germina,50,,50,5,
-"3.1",Ode of Resurrected Wings,50,50,100,10,Tusks of Fury
-"3.2",Frostfall Sickle,60,,60,6,`,
-  rescreen: `Patch,Agent,Cost,,Total,Multi,50/50 L Agent
-"2.5",Alice,78,,78,8,
-"3.1",Metanukimorphosis (WE),68,,68,7,
-"3.1 -> 3.4",Yuzuha -> ???,8,,,0,`
-};
+// 3. UTILITAIRES DE TEXTE & IMAGES (100% DYNAMIQUES)
+const cleanName = s => (s || '').replace(/[\s\-_]+we$|\(we\)$/i, '').trim();
+const isEngineName = s => /\bwe\b|\(we\)$|^w[-_ ]?engine|\bmoteur\b/i.test(s || '');
 
-// ==========================================================================
-// 2. UTILITAIRES & RESOLUTION D'IMAGES DYNAMIQUE (REGLE D'OR)
-// ==========================================================================
-function cleanAgentName(name) {
-  if (!name) return '';
-  return name.trim().replace(/[\s\-_]+we$/i, '').replace(/\(we\)$/i, '').trim();
+function getPortraitUrl(name, isEngine) {
+  if (!name || name.includes('?')) return '';
+  const s = cleanName(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return isEngine
+    ? `engines/W-Engine_${s.replace(/^(w[-_ ]?engine|moteur[-_ ]?w)\s*[:\-_]?\s*/i, '').replace(/\s+/g, '_')}.webp`
+    : `characters/${s.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '')}.webp`;
 }
 
-function isEngineName(name) {
-  if (!name) return false;
-  const raw = String(name).trim();
-  return (/\bwe\b/i).test(raw) ||
-         (/\(we\)$/i).test(raw) ||
-         (/^w[-_ ]?engine/i).test(raw) ||
-         (/\bmoteur\b/i).test(raw);
-}
-
-function isEnginePull(item) {
-  if (!item) return false;
-  return Boolean(
-    item.isEngine ||
-    item.type === 'engine' ||
-    isEngineName(item.agent) ||
-    (item.targetAgent && isEngineName(item.targetAgent))
-  );
-}
-
-function formatCharSlug(name) {
-  if (!name) return '';
-  return cleanAgentName(name)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[\s\-]+/g, '_')
-    .replace(/[^a-z0-9_]/g, '');
-}
-
-function formatEngineSlug(name) {
-  if (!name) return '';
-  return name.trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/^(w[-_ ]?engine|moteur[-_ ]?w)\s*[:\-_]?\s*/i, '')
-    .replace(/[\s\-_]+we$/i, '')
-    .replace(/\(we\)$/i, '')
-    .trim()
-    .replace(/\s+/g, '_');
-}
-
-function formatAgentName(name) {
-  if (!name) return '';
-  if (name.includes('?')) {
-    return name.replace(/\?+/g, match => `<span class="agent-unknown">${match}</span>`);
-  }
-  return name;
-}
-
-function getSvgFallback(name, isEngine = false) {
-  const clean = cleanAgentName(name);
-  const label = clean ? clean.slice(0, 3).toUpperCase() : (name ? name.trim().slice(0, 3).toUpperCase() : '?');
-  const textColor = isEngine ? '#38bdf8' : '#9ca3af';
-  const svgXml = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="#0a0b0d" width="100" height="100"/><text fill="${textColor}" font-family="Chakra Petch, monospace" font-style="italic" font-size="38" font-weight="900" letter-spacing="1" x="50%" y="54%" text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`;
-  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgXml);
-}
-
-function getPortraitUrl(name, isEngine = false) {
-  if (!name || name.includes('?')) return getSvgFallback(name || '', isEngine);
-  const raw = name.trim();
-  if (isEngine || isEngineName(raw)) {
-    return `engines/W-Engine_${formatEngineSlug(raw)}.webp`;
-  }
-  return `characters/${formatCharSlug(raw)}.webp`;
-}
-
-window.handleImgError = function(img, name, isEngine = false) {
-  if (!name || name.includes('?')) {
-    img.onerror = null;
-    img.src = getSvgFallback(name, isEngine);
-    return;
-  }
-
-  // Si non trouvé, tentative unique dans l'autre dossier (personnage <-> moteur)
+window.handleImgError = (img, name, isEngine) => {
   if (!img.dataset.flipped) {
     img.dataset.flipped = '1';
-    img.src = isEngine ? `characters/${formatCharSlug(name)}.webp` : `engines/W-Engine_${formatEngineSlug(name)}.webp`;
-    return;
+    img.src = getPortraitUrl(name, !isEngine);
   }
-
-  // Fallback ultime SVG avec initiales
-  img.onerror = null;
-  img.src = getSvgFallback(name, isEngine);
 };
 
-function safeName(str) {
-  return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
+const formatAgentHtml = name => (name || '').replace(/\?+/g, m => `<span class="agent-unknown">${m}</span>`);
 
-function parsePatchNumber(patch) {
-  if (!patch) return 0;
-  const first = patch.split('/')[0].split('->')[0].trim().replace(',', '.');
-  const [major = 0, minor = 0] = first.split('.').map(n => parseInt(n, 10) || 0);
-  return major * 100 + minor;
-}
-
-// ==========================================================================
-// 3. PARSER CSV ROBUSTE
-// ==========================================================================
+// 4. PARSER CSV & GENERATION DU MODELE DIRECT
 function parseCSVRows(text) {
-  const rows = [];
-  const lines = text.split(/\r?\n/);
-  for (const line of lines) {
-    if (!line.trim()) continue;
+  return text.split(/\r?\n/).filter(l => l.trim()).map(line => {
     const row = [];
-    let inQuotes = false;
-    let token = '';
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') inQuotes = !inQuotes;
-      else if (ch === ',' && !inQuotes) {
-        row.push(token.trim());
-        token = '';
-      } else {
-        token += ch;
-      }
+    let inQ = false, cur = '';
+    for (const ch of line) {
+      if (ch === '"') inQ = !inQ;
+      else if (ch === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
+      else cur += ch;
     }
-    row.push(token.trim());
-    rows.push(row);
-  }
-  return rows;
+    row.push(cur.trim());
+    return row;
+  });
 }
 
-function parsePullsFromCSV(csvText, categoryKey) {
-  const rows = parseCSVRows(csvText);
+function parseCyclesFromCSV(text, catKey) {
+  const rows = parseCSVRows(text);
   if (rows.length < 2) return [];
 
-  const pulls = [];
+  const cycles = [];
   let currentPatch = '1.0';
-  const seenCharsByPatch = new Set();
-  const seenEnginesByPatch = new Set();
+  const seenChars = new Set(), seenEngines = new Set();
 
   for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    const [patchRaw, agentRaw, pull1Raw, pull2Raw, totalRaw, , lostAgentRaw] = row;
+    const [patchRaw, agentRaw, p1Raw, p2Raw, totRaw, , lostRaw] = rows[i];
     if (!agentRaw) continue;
 
-    const pull1 = parseInt(String(pull1Raw || '').replace(',', '.'), 10) || 0;
-    const pull2 = parseInt(String(pull2Raw || '').replace(',', '.'), 10) || 0;
-    let total = parseInt(String(totalRaw || '').replace(',', '.'), 10) || 0;
+    const pull1 = parseInt(p1Raw, 10) || 0;
+    const pull2 = parseInt(p2Raw, 10) || 0;
+    let total = parseInt(totRaw, 10) || (pull1 + pull2);
     if (pull1 === 0 && pull2 === 0 && total === 0) continue;
 
     if (patchRaw) {
@@ -257,788 +82,421 @@ function parsePullsFromCSV(csvText, categoryKey) {
       if (currentPatch === '3') currentPatch = '3.0';
     }
 
-    let bannerFrom = null;
-    let targetAgent = agentRaw;
+    let bannerFrom = null, targetAgent = agentRaw;
     if (agentRaw.includes('->')) {
       const parts = agentRaw.split('->').map(p => p.trim());
       bannerFrom = parts[0];
       targetAgent = parts[1];
     }
 
-    const isLoss = Boolean(lostAgentRaw && lostAgentRaw.trim() !== '');
-    if (total === 0) total = pull1 + pull2;
-
-    const lostPity = isLoss ? pull1 : 0;
-    const cost = isLoss ? (pull2 || pull1) : pull1;
-    const isEngine = categoryKey === 'engine' || isEngineName(targetAgent) || isEngineName(agentRaw);
-
+    const isLoss = Boolean(lostRaw && lostRaw.trim());
+    const isEngine = catKey === 'engine' || isEngineName(targetAgent) || isEngineName(agentRaw);
     let isGuaranteedFirst = false;
-    if (categoryKey === 'rescreen' && !isLoss) {
+
+    if (catKey === 'rescreen' && !isLoss) {
       const patchKey = currentPatch.split('->')[0].trim();
-      const seenSet = isEngine ? seenEnginesByPatch : seenCharsByPatch;
+      const seenSet = isEngine ? seenEngines : seenChars;
       if (!seenSet.has(patchKey)) {
         seenSet.add(patchKey);
         isGuaranteedFirst = true;
       }
     }
 
-    pulls.push({
-      id: pulls.length + 1,
+    cycles.push({
       patch: currentPatch,
       agent: targetAgent,
-      agentRaw,
       bannerFrom,
-      cost,
       isLoss,
-      lostAgent: isLoss ? lostAgentRaw.trim() : null,
-      lostPity,
+      lostAgent: isLoss ? lostRaw.trim() : null,
+      lostPity: isLoss ? pull1 : 0,
+      targetPity: isLoss ? (pull2 || pull1) : pull1,
       total,
-      type: categoryKey,
+      type: catKey,
       isEngine,
       isGuaranteedFirst
     });
   }
-
-  return pulls;
+  return cycles;
 }
 
-// ==========================================================================
-// 4. ETAT CENTRAL DE L'APPLICATION
-// ==========================================================================
-const state = {
-  category: 'character',
-  filter: 'all', // 'all', 'win', 'loss', 'guaranteed'
-  search: '',
-  sort: 'newest', // 'newest', 'oldest', 'pity-high', 'pity-low'
-  view: 'matrix', // 'matrix', 'cards'
-  data: {},
-  sRanks: [] // Cache des tirages S-Rank pour la catégorie active
-};
-
-function updateActiveSRanks() {
-  state.sRanks = expandPullsToSRanks(getActivePulls());
-}
-
-// ==========================================================================
-// 5. MODELE DE DONNEES & CALCUL DES STATISTIQUES (FONCTIONS PURES)
-// ==========================================================================
-function getCombinedPulls() {
-  const combined = [];
-  const typeOrder = { character: 1, engine: 2, rescreen: 3 };
-  Object.keys(CATEGORIES).forEach(key => {
-    if (state.data[key]) combined.push(...state.data[key]);
-  });
-  combined.sort((a, b) => {
-    const patchDiff = parsePatchNumber(a.patch) - parsePatchNumber(b.patch);
-    if (patchDiff !== 0) return patchDiff;
-    const typeDiff = (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
-    if (typeDiff !== 0) return typeDiff;
-    return a.id - b.id;
-  });
-  return combined.map((p, idx) => ({ ...p, id: idx + 1 }));
-}
-
-function getActivePulls() {
-  if (state.category === 'all') return getCombinedPulls();
-  return state.data[state.category] || [];
-}
-
-function getItemStatus(item) {
-  if (item.status) return item.status.toLowerCase();
-  if (item.isLoss) return 'loss';
-  if (item.isGuaranteedFirst) return 'guaranteed';
-  return 'win';
-}
-
-function expandPullsToSRanks(pulls) {
+function buildItemsFromCycles(cycles) {
   const items = [];
-  pulls.forEach(p => {
-    const isEngine = isEnginePull(p);
-    if (p.isLoss) {
-      let lossPatch = p.patch;
-      let guarPatch = p.patch;
-      if (p.patch && p.patch.includes('/')) {
-        const parts = p.patch.split('/').map(s => s.trim());
-        lossPatch = parts[0] || p.patch;
-        guarPatch = parts[1] || parts[0] || p.patch;
-      }
-      const targetAgent = p.bannerFrom || p.agent;
+  cycles.forEach(c => {
+    let lossPatch = c.patch, guarPatch = c.patch;
+    if (c.patch && c.patch.includes('/')) {
+      const parts = c.patch.split('/').map(s => s.trim());
+      lossPatch = parts[0];
+      guarPatch = parts[1] || parts[0];
+    }
+
+    if (c.isLoss) {
       items.push({
         id: items.length + 1,
-        pullId: p.id,
-        agent: p.lostAgent,
-        safeAgent: safeName(p.lostAgent),
-        imgUrl: getPortraitUrl(p.lostAgent, isEngine),
-        pity: p.lostPity,
+        agent: c.lostAgent,
+        pity: c.lostPity,
         status: 'loss',
         patch: lossPatch,
-        targetAgent,
-        bannerFrom: p.bannerFrom,
-        totalCycle: p.total,
-        type: p.type,
-        isEngine,
-        isRescreenFirst: false,
-        searchKey: `${p.lostAgent} ${cleanAgentName(p.lostAgent)} ${targetAgent} ${lossPatch}`.toLowerCase()
+        isEngine: c.isEngine,
+        cycle: c
       });
       items.push({
         id: items.length + 1,
-        pullId: p.id,
-        agent: p.agent,
-        safeAgent: safeName(p.agent),
-        imgUrl: getPortraitUrl(p.agent, isEngine),
-        pity: p.cost,
+        agent: c.agent,
+        pity: c.targetPity,
         status: 'guaranteed',
         patch: guarPatch,
-        lostAgent: p.lostAgent,
-        totalCycle: p.total,
-        type: p.type,
-        isEngine,
-        isRescreenFirst: false,
-        searchKey: `${p.agent} ${cleanAgentName(p.agent)} ${p.lostAgent || ''} ${guarPatch}`.toLowerCase()
+        isEngine: c.isEngine,
+        cycle: c
       });
     } else {
       items.push({
         id: items.length + 1,
-        pullId: p.id,
-        agent: p.agent,
-        safeAgent: safeName(p.agent),
-        imgUrl: getPortraitUrl(p.agent, isEngine),
-        pity: p.cost,
-        status: p.isGuaranteedFirst ? 'guaranteed' : 'win',
-        patch: p.patch,
-        bannerFrom: p.bannerFrom,
-        totalCycle: p.total,
-        type: p.type,
-        isEngine,
-        isRescreenFirst: Boolean(p.isGuaranteedFirst),
-        searchKey: `${p.agent} ${cleanAgentName(p.agent)} ${p.bannerFrom || ''} ${p.patch}`.toLowerCase()
+        agent: c.agent,
+        pity: c.targetPity,
+        status: c.isGuaranteedFirst ? 'guaranteed' : 'win',
+        patch: c.patch,
+        isEngine: c.isEngine,
+        cycle: c
       });
     }
   });
   return items;
 }
 
-function computeStats(pulls, sRankItems) {
-  const totalPulls = pulls.reduce((sum, p) => sum + p.total, 0);
-  const wins = pulls.filter(p => !p.isLoss && !p.isGuaranteedFirst).length;
-  const losses = pulls.filter(p => p.isLoss).length;
+function getActiveCycles() {
+  if (state.category === 'all') {
+    const combined = [...state.cycles.character, ...state.cycles.engine, ...state.cycles.rescreen];
+    const parsePatch = p => {
+      const [M = 0, m = 0] = (p || '').split(/[/\->]/)[0].split('.').map(Number);
+      return M * 100 + m;
+    };
+    return combined.sort((a, b) => parsePatch(a.patch) - parsePatch(b.patch));
+  }
+  return state.cycles[state.category] || [];
+}
+
+function updateActiveItems() {
+  state.items = buildItemsFromCycles(getActiveCycles());
+}
+
+// 5. CALCUL DES STATISTIQUES
+function computeStats(cycles, items) {
+  const totalPulls = cycles.reduce((sum, c) => sum + c.total, 0);
+  const fiftyPulls = cycles.filter(c => !c.isGuaranteedFirst);
+  const wins = fiftyPulls.filter(c => !c.isLoss).length;
+  const losses = fiftyPulls.filter(c => c.isLoss).length;
   const total5050 = wins + losses;
   const winRate = total5050 > 0 ? ((wins / total5050) * 100).toFixed(1) : null;
+  const avgPity = items.length > 0 ? (totalPulls / items.length).toFixed(2) : '0';
 
-  const totalSRanks = sRankItems.length;
-  const avgPitySRank = totalSRanks > 0 ? (totalPulls / totalSRanks).toFixed(2) : '0';
-
-  const fiftyFiftyPulls = pulls.filter(p => !p.isGuaranteedFirst).sort((a, b) => a.id - b.id);
-  let currentStreak = 0;
-  let isCurrentWin = true;
-  let maxWinStreak = 0;
-  let maxLossStreak = 0;
-  let currentWinCounter = 0;
-  let currentLossCounter = 0;
-
-  for (const p of fiftyFiftyPulls) {
-    if (!p.isLoss) {
-      currentWinCounter++;
-      currentLossCounter = 0;
-      if (currentWinCounter > maxWinStreak) maxWinStreak = currentWinCounter;
+  let currentStreak = 0, isCurrentWin = true, maxWin = 0, maxLoss = 0, winCount = 0, lossCount = 0;
+  fiftyPulls.forEach(c => {
+    if (!c.isLoss) {
+      winCount++; lossCount = 0;
+      if (winCount > maxWin) maxWin = winCount;
     } else {
-      currentLossCounter++;
-      currentWinCounter = 0;
-      if (currentLossCounter > maxLossStreak) maxLossStreak = currentLossCounter;
-    }
-  }
-
-  if (fiftyFiftyPulls.length > 0) {
-    const lastPull = fiftyFiftyPulls[fiftyFiftyPulls.length - 1];
-    isCurrentWin = !lastPull.isLoss;
-    currentStreak = isCurrentWin ? currentWinCounter : currentLossCounter;
-  }
-
-  return {
-    totalPulls,
-    wins,
-    losses,
-    total5050,
-    winRate,
-    avgPitySRank,
-    totalSRanks,
-    streak: { currentStreak, maxWinStreak, maxLossStreak, isCurrentWin, hasFiftyFifty: fiftyFiftyPulls.length > 0 }
-  };
-}
-
-// ==========================================================================
-// 6. PIPELINE DE FILTRAGE & DE TRI
-// ==========================================================================
-function matchesSearch(item, query) {
-  if (!query) return true;
-  const q = query.toLowerCase().trim();
-  const isEngKw = item.isEngine && (q.includes('we') || q.includes('moteur') || q.includes('engine'));
-  const isRescreenKw = item.type === 'rescreen' && q.includes('rescreen');
-  return item.searchKey.includes(q) || isEngKw || isRescreenKw;
-}
-
-
-// ==========================================================================
-// 7. RENDU HTML : TUILES, CARTES & MODALES
-// ==========================================================================
-function renderMatrixTile(item) {
-  const status = getItemStatus(item);
-  const isEngine = item.isEngine;
-  const kindLabel = isEngine ? 'Moteur W' : 'Agent';
-  const statusTitle = status === 'win'
-    ? '50/50 Gagné'
-    : (status === 'loss'
-        ? `50/50 Perdu (bannière ${item.targetAgent})`
-        : (item.isRescreenFirst ? `1er ${kindLabel} garanti (Rescreen v${item.patch})` : 'Garanti'));
-
-  const isUnknown = Boolean(item.agent && item.agent.includes('?'));
-  const mediaHtml = isUnknown
-    ? `<div class="matrix-unknown agent-unknown">???</div>`
-    : `<img class="matrix-img" src="${item.imgUrl}" alt="${item.safeAgent}" loading="lazy" onerror="handleImgError(this, '${item.safeAgent}', ${isEngine})" />`;
-
-  return `
-    <div class="matrix-tile" data-status="${status}" data-item-id="${item.id}" title="#${item.id} [Patch ${item.patch}] ${kindLabel} : ${item.agent} (${statusTitle}) - ${item.pity} tirages">
-      ${mediaHtml}
-      <div class="matrix-pity-badge" data-status="${status}">
-        <span class="matrix-pity-num">${item.pity}</span>
-      </div>
-    </div>
-  `;
-}
-
-function renderPullCard(item) {
-  const status = getItemStatus(item);
-  const isEngine = item.isEngine;
-  const isUnknown = Boolean(item.agent && item.agent.includes('?'));
-  const engineBadge = isEngine ? '<span class="badge-we">MOTEUR W</span>' : '';
-
-  let statusBadgeText = '50/50 GAGNÉ';
-  if (status === 'loss') {
-    const target = item.targetAgent ? ` (Bannière ${formatAgentName(item.targetAgent)})` : '';
-    statusBadgeText = `50/50 PERDU${target}`;
-  } else if (status === 'guaranteed') {
-    statusBadgeText = item.isRescreenFirst ? 'GARANTI (RESCREEN)' : 'GARANTI';
-  }
-
-  const patchText = item.patch ? `<span class="pull-card-patch">v${item.patch}</span>` : '';
-
-  const bannerMediaHtml = isUnknown
-    ? `<div class="pull-banner-unknown agent-unknown">???</div>`
-    : `<img class="pull-banner-img ${isEngine ? 'is-engine' : ''}" src="${item.imgUrl}" alt="${item.safeAgent}" loading="lazy" onerror="handleImgError(this, '${item.safeAgent}', ${isEngine})" />`;
-
-  return `
-    <div class="pull-card" data-status="${status}" data-item-id="${item.id}" data-pull-id="${item.pullId || item.id}">
-      <div class="pull-card-banner">
-        ${bannerMediaHtml}
-      </div>
-      <div class="pull-card-main">
-        <div class="pull-index-cartridge">
-          <span class="pull-index-num">#${item.id}</span>
-        </div>
-        <div class="pull-card-row">
-          <span class="pull-card-name">${formatAgentName(item.agent)}</span>
-          ${engineBadge}
-          <span class="status-badge" data-status="${status}">${statusBadgeText}</span>
-          ${patchText}
-        </div>
-      </div>
-      <div class="pull-total-capsule">
-        ${item.pity} Tirages
-      </div>
-    </div>
-  `;
-}
-
-function openDetailModal(entity) {
-  const modal = document.getElementById('detail-modal');
-  const titleEl = document.getElementById('detail-modal-title');
-  const contentEl = document.getElementById('detail-modal-content');
-  if (!modal || !titleEl || !contentEl) return;
-
-  const activePulls = getActivePulls();
-  const parentPull = activePulls.find(p => p.id === (entity.pullId || entity.id)) || entity;
-  const isEngine = isEnginePull(entity) || isEnginePull(parentPull);
-  const displayId = parentPull.id || entity.pullId || entity.id;
-  const patchNum = String(parentPull.patch || entity.patch || '').replace(/^v/i, '');
-
-  titleEl.innerHTML = `
-    <span class="modal-title-main">TIRAGE #${displayId}</span>
-    <span class="modal-patch-badge">v${patchNum}</span>
-  `;
-
-  const status = getItemStatus(entity);
-  const isLossCycle = Boolean(parentPull.isLoss);
-
-  const renderAgentBox = (agentName, itemStatus, pullsCount) => {
-    const isUnknown = Boolean(agentName && agentName.includes('?'));
-    const frameContent = isUnknown
-      ? `<div class="detail-unknown agent-unknown">???</div>`
-      : `<img src="${getPortraitUrl(agentName, isEngine)}" alt="${agentName}" onerror="handleImgError(this, '${safeName(agentName)}', ${isEngine})" />`;
-
-    return `
-      <div class="detail-agent-box" data-status="${itemStatus}">
-        <div class="detail-agent-frame ${isEngine ? 'is-engine' : ''}">
-          ${frameContent}
-        </div>
-        <div class="detail-agent-field">
-          <div class="detail-field-name">${formatAgentName(agentName)}</div>
-          <div class="detail-field-pulls" data-status="${itemStatus}">${pullsCount} pulls</div>
-        </div>
-      </div>
-    `;
-  };
-
-  let agentSectionHtml = '';
-  let statusLabel = '50/50 Gagné';
-
-  if (isLossCycle) {
-    statusLabel = '50/50 Perdu + Garanti';
-    agentSectionHtml = `
-      <div class="detail-bays-grid">
-        ${renderAgentBox(parentPull.lostAgent, 'loss', parentPull.lostPity)}
-        ${renderAgentBox(parentPull.agent, 'guaranteed', parentPull.cost)}
-      </div>
-    `;
-  } else {
-    if (status === 'guaranteed') {
-      statusLabel = entity.isRescreenFirst || parentPull.isGuaranteedFirst ? 'Garanti (Rescreen)' : 'Garanti';
-    }
-    agentSectionHtml = `
-      <div class="detail-bays-single">
-        ${renderAgentBox(parentPull.agent || entity.agent, status, parentPull.cost || entity.pity)}
-      </div>
-    `;
-  }
-
-  const totalCost = isLossCycle ? parentPull.total : (parentPull.cost || entity.pity);
-  const individualPity = entity.pity !== undefined ? entity.pity : totalCost;
-
-  contentEl.innerHTML = `
-    <div class="detail-console-interior">
-      ${agentSectionHtml}
-      <div class="detail-stats-grid">
-        ${isLossCycle ? `
-          <div class="detail-stat-item">
-            <span class="detail-stat-label">Pity sélectionnée</span>
-            <span class="detail-stat-val">${individualPity} tirages</span>
-          </div>
-          <div class="detail-stat-item">
-            <span class="detail-stat-label">Total du cycle</span>
-            <span class="detail-stat-val">${totalCost} tirages</span>
-          </div>
-        ` : `
-          <div class="detail-stat-item">
-            <span class="detail-stat-label">Pity du tirage</span>
-            <span class="detail-stat-val">${totalCost} tirages</span>
-          </div>
-          <div class="detail-stat-item">
-            <span class="detail-stat-label">Total du cycle</span>
-            <span class="detail-stat-val">${totalCost} tirages</span>
-          </div>
-        `}
-        <div class="detail-stat-item">
-          <span class="detail-stat-label">Coût polychromes</span>
-          <span class="detail-stat-val">${(totalCost * 160).toLocaleString()}</span>
-        </div>
-        <div class="detail-stat-item">
-          <span class="detail-stat-label">Statut</span>
-          <span class="detail-stat-val detail-status-val" data-status="${status}">${statusLabel}</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  modal.classList.add('active');
-}
-
-// ==========================================================================
-// 8. SYNCHRONISATION DU DOM & RENDU PRINCIPAL
-// ==========================================================================
-function updateStatsUI(pulls, sRanks) {
-  const stats = computeStats(pulls, sRanks);
-
-  // 50/50 Win Rate
-  const winrateEl = document.getElementById('stat-winrate');
-  if (winrateEl) winrateEl.textContent = stats.winRate ? `${stats.winRate}%` : '—';
-  const winCountEl = document.getElementById('stat-win-count');
-  if (winCountEl) winCountEl.textContent = stats.wins;
-  const lossCountEl = document.getElementById('stat-loss-count');
-  if (lossCountEl) lossCountEl.textContent = stats.losses;
-
-  // Active Streak
-  const streakEl = document.getElementById('stat-streak');
-  const streakChip = document.querySelector('.chip-streak');
-  if (streakEl) {
-    if (stats.streak.hasFiftyFifty && stats.streak.currentStreak > 0) {
-      streakEl.textContent = `${stats.streak.currentStreak}${stats.streak.isCurrentWin ? 'W' : 'L'}`;
-      if (streakChip) streakChip.dataset.streakType = stats.streak.isCurrentWin ? 'win' : 'loss';
-    } else {
-      streakEl.textContent = '—';
-      if (streakChip) delete streakChip.dataset.streakType;
-    }
-  }
-  const streakRecordsEl = document.getElementById('stat-streak-records');
-  if (streakRecordsEl) {
-    if (stats.streak.hasFiftyFifty) {
-      streakRecordsEl.textContent = `(Max: ${stats.streak.maxWinStreak || 0}W / ${stats.streak.maxLossStreak || 0}L)`;
-    } else {
-      streakRecordsEl.textContent = '';
-    }
-  }
-
-  // Totaux & Moyennes
-  const totalPullsEl = document.getElementById('stat-total-pulls');
-  if (totalPullsEl) totalPullsEl.textContent = stats.totalPulls.toLocaleString();
-  const polyCountEl = document.getElementById('stat-poly-count');
-  if (polyCountEl) {
-    const poly = stats.totalPulls * 160;
-    polyCountEl.textContent = poly >= 1000 ? `${Math.round(poly / 1000)}k` : `${poly}`;
-  }
-
-  const avgSrankEl = document.getElementById('stat-avg-srank');
-  if (avgSrankEl) avgSrankEl.textContent = stats.avgPitySRank;
-  const srankCountEl = document.getElementById('stat-srank-count');
-  if (srankCountEl) srankCountEl.textContent = stats.totalSRanks;
-
-  // Placeholder barre de recherche
-  const activeCatConfig = CATEGORIES[state.category] || ALL_CATEGORY;
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) searchInput.placeholder = activeCatConfig.searchPlaceholder;
-}
-
-function updatePullsAndFilterUI() {
-  const container = document.getElementById('pulls-container');
-  if (!container) return;
-
-  // 1. Filtrer d'abord par le texte de recherche
-  const searchItems = state.search ? state.sRanks.filter(item => matchesSearch(item, state.search)) : state.sRanks;
-
-  // 2. Mettre à jour les compteurs des filtres
-  const counts = { all: searchItems.length, win: 0, loss: 0, guaranteed: 0 };
-  for (let i = 0; i < searchItems.length; i++) {
-    const s = getItemStatus(searchItems[i]);
-    if (counts[s] !== undefined) counts[s]++;
-  }
-
-  document.querySelectorAll('.filter-pill').forEach(pill => {
-    const f = pill.dataset.filter;
-    const countEl = pill.querySelector('.filter-count');
-    if (countEl && counts[f] !== undefined) {
-      countEl.textContent = `(${counts[f]})`;
+      lossCount++; winCount = 0;
+      if (lossCount > maxLoss) maxLoss = lossCount;
     }
   });
 
-  // 3. Filtrer par statut sélectionné
-  const filtered = state.filter === 'all'
-    ? searchItems.slice()
-    : searchItems.filter(item => getItemStatus(item) === state.filter);
+  if (fiftyPulls.length > 0) {
+    const last = fiftyPulls[fiftyPulls.length - 1];
+    isCurrentWin = !last.isLoss;
+    currentStreak = isCurrentWin ? winCount : lossCount;
+  }
 
-  if (filtered.length === 0) {
+  return { totalPulls, wins, losses, winRate, avgPity, totalSRanks: items.length, currentStreak, isCurrentWin, maxWin, maxLoss, has5050: fiftyPulls.length > 0 };
+}
+
+// 6. RENDU UI
+function renderStatsUI(stats) {
+  document.getElementById('stat-winrate').textContent = stats.winRate ? `${stats.winRate}%` : '—';
+  document.getElementById('stat-win-count').textContent = stats.wins;
+  document.getElementById('stat-loss-count').textContent = stats.losses;
+
+  const streakEl = document.getElementById('stat-streak');
+  const streakChip = document.querySelector('.chip-streak');
+  if (stats.has5050 && stats.currentStreak > 0) {
+    streakEl.textContent = `${stats.currentStreak}${stats.isCurrentWin ? 'W' : 'L'}`;
+    streakChip.dataset.streakType = stats.isCurrentWin ? 'win' : 'loss';
+  } else {
+    streakEl.textContent = '—';
+    delete streakChip.dataset.streakType;
+  }
+  document.getElementById('stat-streak-records').textContent = stats.has5050 ? `(Max: ${stats.maxWin}W / ${stats.maxLoss}L)` : '';
+
+  document.getElementById('stat-total-pulls').textContent = stats.totalPulls.toLocaleString();
+  const poly = stats.totalPulls * 160;
+  document.getElementById('stat-poly-count').textContent = poly >= 1000 ? `${Math.round(poly / 1000)}k` : poly;
+  document.getElementById('stat-avg-srank').textContent = stats.avgPity;
+  document.getElementById('stat-srank-count').textContent = stats.totalSRanks;
+}
+
+function renderMedia(name, isEngine, className) {
+  if (!name || name.includes('?')) return `<div class="${className}-unknown agent-unknown">???</div>`;
+  const url = getPortraitUrl(name, isEngine);
+  return `<img class="${className}-img ${isEngine ? 'is-engine' : ''}" src="${url}" alt="${name}" loading="lazy" onerror="handleImgError(this, '${name.replace(/'/g, "\\'")}', ${isEngine})" />`;
+}
+
+function renderMatrixTile(item) {
+  return `
+    <div class="matrix-tile" data-status="${item.status}" data-id="${item.id}" title="#${item.id} [v${item.patch}] ${item.agent} (${item.status}) - ${item.pity} pulls">
+      ${renderMedia(item.agent, item.isEngine, 'matrix')}
+      <div class="matrix-pity-badge" data-status="${item.status}">
+        <span class="matrix-pity-num">${item.pity}</span>
+      </div>
+    </div>`;
+}
+
+function renderPullCard(item) {
+  let badgeText = item.status === 'loss'
+    ? `50/50 PERDU${item.cycle.bannerFrom || item.cycle.agent ? ` (${item.cycle.bannerFrom || item.cycle.agent})` : ''}`
+    : (item.cycle.isGuaranteedFirst ? 'GARANTI (RESCREEN)' : (item.status === 'guaranteed' ? 'GARANTI' : '50/50 GAGNÉ'));
+
+  return `
+    <div class="pull-card" data-status="${item.status}" data-id="${item.id}">
+      <div class="pull-card-banner">${renderMedia(item.agent, item.isEngine, 'pull-banner')}</div>
+      <div class="pull-card-main">
+        <div class="pull-index-cartridge"><span class="pull-index-num">#${item.id}</span></div>
+        <div class="pull-card-row">
+          <span class="pull-card-name">${formatAgentHtml(item.agent)}</span>
+          ${item.isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
+          <span class="status-badge" data-status="${item.status}">${badgeText}</span>
+          ${item.patch ? `<span class="pull-card-patch">v${item.patch}</span>` : ''}
+        </div>
+      </div>
+      <div class="pull-total-capsule">${item.pity} Tirages</div>
+    </div>`;
+}
+
+function renderPullsUI() {
+  const container = document.getElementById('pulls-container');
+  const q = state.search.toLowerCase().trim();
+
+  const searched = state.items.filter(item => {
+    if (!q) return true;
+    const matchKw = (item.isEngine && (q.includes('we') || q.includes('moteur'))) || (item.cycle.type === 'rescreen' && q.includes('rescreen'));
+    return item.agent.toLowerCase().includes(q) || item.patch.includes(q) || (item.cycle.lostAgent && item.cycle.lostAgent.toLowerCase().includes(q)) || matchKw;
+  });
+
+  const counts = { all: searched.length, win: 0, loss: 0, guaranteed: 0 };
+  searched.forEach(i => counts[i.status]++);
+
+  document.querySelectorAll('.filter-pill').forEach(pill => {
+    const f = pill.dataset.filter;
+    const cEl = pill.querySelector('.filter-count');
+    if (cEl && counts[f] !== undefined) cEl.textContent = `(${counts[f]})`;
+  });
+
+  const filtered = state.filter === 'all' ? searched : searched.filter(i => i.status === state.filter);
+
+  if (!filtered.length) {
     container.className = '';
-    container.innerHTML = `<div class="empty-state"><p>Aucun tirage ne correspond à vos filtres.</p></div>`;
+    container.innerHTML = '<div class="empty-state"><p>Aucun tirage ne correspond à vos filtres.</p></div>';
     return;
   }
 
-  // 4. Trier
   filtered.sort((a, b) => {
     if (state.sort === 'newest') return b.id - a.id;
     if (state.sort === 'oldest') return a.id - b.id;
-    if (state.sort === 'pity-high') return (b.pity || 0) - (a.pity || 0);
-    if (state.sort === 'pity-low') return (a.pity || 0) - (b.pity || 0);
+    if (state.sort === 'pity-high') return b.pity - a.pity;
+    if (state.sort === 'pity-low') return a.pity - b.pity;
     return 0;
   });
 
   const isMatrix = state.view === 'matrix';
   container.className = isMatrix ? 'pulls-grid-matrix' : 'pulls-container';
-  container.innerHTML = filtered.map(item => isMatrix ? renderMatrixTile(item) : renderPullCard(item)).join('');
+  container.innerHTML = filtered.map(isMatrix ? renderMatrixTile : renderPullCard).join('');
 }
 
 function render() {
-  const activePulls = getActivePulls();
-  updateStatsUI(activePulls, state.sRanks);
-  updatePullsAndFilterUI();
-}
-
-function setCategory(catId) {
-  state.category = catId;
-  updateActiveSRanks();
-  document.querySelectorAll('.cat-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.category === catId);
-  });
-  render();
-}
-
-// ==========================================================================
-// 9. CHARGEMENT AUTOMATIQUE DES FICHIERS CSV (HTTP / GITHUB PAGES)
-// ==========================================================================
-async function loadCSVData() {
-  let loadedFromNetwork = false;
-
-  try {
-    const results = await Promise.all(Object.entries(CATEGORIES).map(async ([catKey, cat]) => {
-      const res = await fetch(encodeURI(cat.file), { cache: 'no-cache' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      const parsed = parsePullsFromCSV(text, catKey);
-      return { catKey, parsed };
-    }));
-
-    results.forEach(({ catKey, parsed }) => {
-      if (parsed.length > 0) state.data[catKey] = parsed;
-    });
-    loadedFromNetwork = true;
-  } catch (err) {
-    // En local (protocole file://) ou hors ligne : chargement depuis les fallbacks
-    Object.keys(CATEGORIES).forEach(key => {
-      state.data[key] = parsePullsFromCSV(FALLBACK_CSVS[key] || '', key);
-    });
-  }
-
-  updateActiveSRanks();
-  renderCategoryTabs();
-  render();
-
-  if (loadedFromNetwork) {
-    console.info(`✓ Données CSV chargées (${Object.keys(CATEGORIES).map(k => `${k}: ${state.data[k].length}`).join(', ')})`);
-  }
-}
-
-// ==========================================================================
-// 10. GENERATION DYNAMIQUE DE LA NAVIGATION ET ECOUTEURS D'EVENEMENTS
-// ==========================================================================
-function getLatestValidPullForCategory(catId) {
-  // Pour le bouton "Tous", icône Soldat 11 imposée
-  if (catId === 'all') {
-    return { name: 'Soldier 11', isEngine: false };
-  }
-
-  let pulls = [];
-  let isEngineDefault = false;
-
-  if (CATEGORIES[catId]) {
-    pulls = state.data[catId] || [];
-    isEngineDefault = Boolean(CATEGORIES[catId].defaultIsEngine);
-  }
-
-  // Chercher en partant de la fin le dernier tirage valide (sans '?')
-  for (let i = pulls.length - 1; i >= 0; i--) {
-    const p = pulls[i];
-    const agentName = p && p.agent ? p.agent.trim() : '';
-    if (agentName && !agentName.includes('?')) {
-      return {
-        name: agentName,
-        isEngine: Boolean(p.isEngine)
-      };
-    }
-  }
-
-  // Fallbacks par défaut si aucun tirage valide trouvé
-  if (isEngineDefault) {
-    return { name: 'The Brimstone', isEngine: true };
-  }
-  return { name: 'Soldier 11', isEngine: false };
+  const cycles = getActiveCycles();
+  renderStatsUI(computeStats(cycles, state.items));
+  renderPullsUI();
 }
 
 function renderCategoryTabs() {
   const container = document.getElementById('category-tabs');
-  if (!container) return;
+  const tabs = [...Object.values(CATEGORIES), ALL_CAT];
 
-  const entries = [...Object.values(CATEGORIES), ALL_CATEGORY];
-  container.innerHTML = entries.map(cat => {
-    const latest = getLatestValidPullForCategory(cat.id);
-    const imgUrl = getPortraitUrl(latest.name, latest.isEngine);
+  container.innerHTML = tabs.map(cat => {
+    const cycles = cat.id === 'all' ? getActiveCycles() : (state.cycles[cat.id] || []);
+    const isAll = cat.id === 'all';
+    const valid = isAll ? null : [...cycles].reverse().find(c => c.agent && !c.agent.includes('?'));
+    const agentName = isAll ? 'Soldier 11' : (valid ? valid.agent : 'Soldier 11');
+    const isEngine = isAll ? false : (valid ? valid.isEngine : false);
+    const url = getPortraitUrl(agentName, isEngine);
+
     return `
-      <button id="tab-cat-${cat.id}" class="cat-tab ${state.category === cat.id ? 'active' : ''}" data-category="${cat.id}" title="Afficher les tirages : ${cat.label}">
+      <button class="cat-tab ${state.category === cat.id ? 'active' : ''}" data-category="${cat.id}">
         <span class="cat-tab-texture" aria-hidden="true">
-          <svg class="cat-tab-halftone-svg" viewBox="0 0 160 50" preserveAspectRatio="none">
-            <use href="#cat-tab-halftone" />
-          </svg>
+          <svg class="cat-tab-halftone-svg" viewBox="0 0 160 50" preserveAspectRatio="none"><use href="#cat-tab-halftone" /></svg>
         </span>
-        <img class="cat-tab-char" src="${imgUrl}" alt="${safeName(latest.name)}" onerror="handleImgError(this, '${safeName(latest.name)}', ${latest.isEngine})" loading="lazy" />
+        <img class="cat-tab-char" src="${url}" alt="${agentName}" loading="lazy" onerror="handleImgError(this, '${agentName}', ${isEngine})" />
         <span class="cat-tab-label">${cat.label}</span>
-      </button>
-    `;
+      </button>`;
   }).join('');
 }
 
-function renderImportRadios() {
-  const container = document.getElementById('import-cat-options');
-  if (!container) return;
+function openDetailModal(item) {
+  const modal = document.getElementById('detail-modal');
+  const c = item.cycle;
+  const isLoss = c.isLoss;
 
-  container.innerHTML = Object.values(CATEGORIES).map((cat, idx) => `
-    <label class="import-radio-label">
-      <input type="radio" name="import-target" value="${cat.id}" id="import-target-${cat.id}" ${idx === 0 ? 'checked' : ''} />
-      <span>${cat.label}</span>
-    </label>
-  `).join('');
+  document.getElementById('detail-modal-title').innerHTML = `
+    <span class="modal-title-main">TIRAGE #${item.id}</span>
+    <span class="modal-patch-badge">v${c.patch}</span>`;
+
+  const renderBox = (name, status, pity) => `
+    <div class="detail-agent-box" data-status="${status}">
+      <div class="detail-agent-frame ${c.isEngine ? 'is-engine' : ''}">${renderMedia(name, c.isEngine, 'detail')}</div>
+      <div class="detail-agent-field">
+        <div class="detail-field-name">${formatAgentHtml(name)}</div>
+        <div class="detail-field-pulls" data-status="${status}">${pity} pulls</div>
+      </div>
+    </div>`;
+
+  const bays = isLoss
+    ? `<div class="detail-bays-grid">${renderBox(c.lostAgent, 'loss', c.lostPity)}${renderBox(c.agent, 'guaranteed', c.targetPity)}</div>`
+    : `<div class="detail-bays-single">${renderBox(c.agent, item.status, item.pity)}</div>`;
+
+  const statusLabel = isLoss ? '50/50 Perdu + Garanti' : (item.status === 'guaranteed' ? 'Garanti' : '50/50 Gagné');
+
+  document.getElementById('detail-modal-content').innerHTML = `
+    <div class="detail-console-interior">
+      ${bays}
+      <div class="detail-stats-grid">
+        <div class="detail-stat-item"><span class="detail-stat-label">Pity du tirage</span><span class="detail-stat-val">${item.pity} tirages</span></div>
+        <div class="detail-stat-item"><span class="detail-stat-label">Total du cycle</span><span class="detail-stat-val">${c.total} tirages</span></div>
+        <div class="detail-stat-item"><span class="detail-stat-label">Coût polychromes</span><span class="detail-stat-val">${(c.total * 160).toLocaleString()}</span></div>
+        <div class="detail-stat-item"><span class="detail-stat-label">Statut</span><span class="detail-stat-val" data-status="${item.status}">${statusLabel}</span></div>
+      </div>
+    </div>`;
+
+  modal.classList.add('active');
 }
 
+// 7. CHARGEMENT RESEAU & IMPORT
+async function loadCSVData() {
+  await Promise.all(Object.entries(CATEGORIES).map(async ([k, cat]) => {
+    try {
+      const res = await fetch(encodeURI(cat.file), { cache: 'no-cache' });
+      if (res.ok) state.cycles[k] = parseCyclesFromCSV(await res.text(), k);
+    } catch (e) {
+      console.warn(`Chargement ${cat.file} ignoré:`, e);
+    }
+  }));
+
+  updateActiveItems();
+  renderCategoryTabs();
+  render();
+}
+
+// 8. DELEGATION D'EVENEMENTS & INITIALISATION
 document.addEventListener('DOMContentLoaded', () => {
-  renderImportRadios();
+  // Render options d'import dynamiques
+  document.getElementById('import-cat-options').innerHTML = Object.values(CATEGORIES).map((c, i) => `
+    <label class="import-radio-label">
+      <input type="radio" name="import-target" value="${c.id}" ${i === 0 ? 'checked' : ''} />
+      <span>${c.label}</span>
+    </label>`).join('');
+
   loadCSVData();
 
-  // Délégation de clics pour les onglets de catégories
-  const categoryTabs = document.getElementById('category-tabs');
-  if (categoryTabs) {
-    categoryTabs.addEventListener('click', e => {
-      const tab = e.target.closest('.cat-tab');
-      if (tab && tab.dataset.category) {
-        setCategory(tab.dataset.category);
-      }
-    });
-  }
-
-  // Recherche textuelle
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', e => {
-      state.search = e.target.value;
-      updatePullsAndFilterUI();
-    });
-  }
-
-  // Filtres (Tous / Gagnés / Perdus / Garantis)
-  const filterPills = document.querySelectorAll('.filter-pill');
-  filterPills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      filterPills.forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      state.filter = pill.dataset.filter;
-      updatePullsAndFilterUI();
-    });
+  // Navigation par catégorie
+  document.getElementById('category-tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.cat-tab');
+    if (!tab) return;
+    state.category = tab.dataset.category;
+    updateActiveItems();
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.toggle('active', t === tab));
+    render();
   });
 
-  // Tri
-  const sortSelect = document.getElementById('sort-select');
-  if (sortSelect) {
-    sortSelect.addEventListener('change', e => {
-      state.sort = e.target.value;
-      updatePullsAndFilterUI();
-    });
-  }
+  // Recherche & filtres
+  document.getElementById('search-input').addEventListener('input', e => {
+    state.search = e.target.value;
+    renderPullsUI();
+  });
 
-  // Bascule de vue (Grille de carrés vs Cartes)
+  document.querySelector('.filter-pills').addEventListener('click', e => {
+    const pill = e.target.closest('.filter-pill');
+    if (!pill) return;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p === pill));
+    state.filter = pill.dataset.filter;
+    renderPullsUI();
+  });
+
+  document.getElementById('sort-select').addEventListener('change', e => {
+    state.sort = e.target.value;
+    renderPullsUI();
+  });
+
+  // Bascule de vue (Grille vs Cartes)
   const btnMatrix = document.getElementById('btn-view-matrix');
   const btnCards = document.getElementById('btn-view-cards');
-  if (btnMatrix && btnCards) {
-    btnMatrix.addEventListener('click', () => {
-      btnMatrix.classList.add('active');
-      btnCards.classList.remove('active');
-      state.view = 'matrix';
-      updatePullsAndFilterUI();
-    });
+  btnMatrix.addEventListener('click', () => {
+    btnMatrix.classList.add('active');
+    btnCards.classList.remove('active');
+    state.view = 'matrix';
+    renderPullsUI();
+  });
+  btnCards.addEventListener('click', () => {
+    btnCards.classList.add('active');
+    btnMatrix.classList.remove('active');
+    state.view = 'cards';
+    renderPullsUI();
+  });
 
-    btnCards.addEventListener('click', () => {
-      btnCards.classList.add('active');
-      btnMatrix.classList.remove('active');
-      state.view = 'cards';
-      updatePullsAndFilterUI();
-    });
-  }
+  // Clic sur un tirage (ouverture modale)
+  document.getElementById('pulls-container').addEventListener('click', e => {
+    const tile = e.target.closest('[data-id]');
+    if (!tile) return;
+    const item = state.items.find(i => i.id === parseInt(tile.dataset.id, 10));
+    if (item) openDetailModal(item);
+  });
 
-  // Interaction et scrollbar auto-masquage sur le conteneur de tirages
-  const pullsContainer = document.getElementById('pulls-container');
-  if (pullsContainer) {
-    pullsContainer.addEventListener('click', e => {
-      const tile = e.target.closest('[data-item-id]');
-      if (!tile) return;
-      const id = parseInt(tile.dataset.itemId, 10);
-      const item = state.sRanks.find(i => i.id === id);
-      if (item) openDetailModal(item);
-    });
+  // Modales : fermeture unifiée
+  document.addEventListener('click', e => {
+    if (e.target.closest('.modal-close') || e.target.classList.contains('modal-backdrop')) {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('active'));
+    }
+  });
 
-    let scrollTimeout;
-    pullsContainer.addEventListener('scroll', () => {
-      pullsContainer.classList.add('is-scrolling');
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        pullsContainer.classList.remove('is-scrolling');
-      }, 1000);
-    }, { passive: true });
-  }
-
-  // Modale de Détail
-  const detailModal = document.getElementById('detail-modal');
-  const detailClose = document.getElementById('detail-modal-close');
-  if (detailClose && detailModal) {
-    detailClose.addEventListener('click', () => detailModal.classList.remove('active'));
-    detailModal.addEventListener('click', e => {
-      if (e.target === detailModal) detailModal.classList.remove('active');
-    });
-  }
-
-  // Modale d'Importation CSV
+  // Modale Import
   const uploadModal = document.getElementById('upload-modal');
-  const openImportBtn = document.getElementById('btn-import-csv');
-  const closeImportBtn = document.getElementById('modal-close-btn');
   const fileInput = document.getElementById('csv-file-input');
   const uploadZone = document.getElementById('upload-zone');
 
-  if (openImportBtn && uploadModal) {
-    openImportBtn.addEventListener('click', () => uploadModal.classList.add('active'));
-  }
-  if (closeImportBtn && uploadModal) {
-    closeImportBtn.addEventListener('click', () => uploadModal.classList.remove('active'));
-  }
-  if (uploadModal) {
-    uploadModal.addEventListener('click', e => {
-      if (e.target === uploadModal) uploadModal.classList.remove('active');
-    });
-  }
+  document.getElementById('btn-import-csv').addEventListener('click', () => uploadModal.classList.add('active'));
+  uploadZone.addEventListener('click', () => fileInput.click());
 
-  if (uploadZone && fileInput) {
-    uploadZone.addEventListener('click', () => fileInput.click());
-    uploadZone.addEventListener('dragover', e => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-    uploadZone.addEventListener('drop', e => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files[0]);
-    });
-
-    fileInput.addEventListener('change', e => {
-      if (e.target.files.length > 0) handleFileUpload(e.target.files[0]);
-    });
-  }
-
-  function handleFileUpload(file) {
-    const fileName = file.name.toLowerCase();
-    let targetType = 'character';
-
-    // Détection automatique de la catégorie cible d'après le nom de fichier
-    const foundCat = Object.keys(CATEGORIES).find(key => fileName.includes(key));
-    if (foundCat) {
-      targetType = foundCat;
-    } else if (fileName.includes('perso')) {
-      targetType = 'character';
-    } else if (fileName.includes('moteur')) {
-      targetType = 'engine';
-    } else {
-      const checkedRadio = document.querySelector('input[name="import-target"]:checked');
-      if (checkedRadio) targetType = checkedRadio.value;
-    }
+  const handleFile = file => {
+    const name = file.name.toLowerCase();
+    const target = Object.keys(CATEGORIES).find(k => name.includes(k)) ||
+      (document.querySelector('input[name="import-target"]:checked')?.value || 'character');
 
     const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const text = e.target.result;
-        const newPulls = parsePullsFromCSV(text, targetType);
-        if (newPulls.length > 0) {
-          state.data[targetType] = newPulls;
-          renderCategoryTabs();
-          setCategory(targetType);
-          if (uploadModal) uploadModal.classList.remove('active');
-        } else {
-          alert('Impossible de trouver des lignes de tirages valides dans ce fichier CSV.');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Erreur lors de la lecture du fichier CSV.');
-      }
+    reader.onload = ev => {
+      state.cycles[target] = parseCyclesFromCSV(ev.target.result, target);
+      state.category = target;
+      updateActiveItems();
+      renderCategoryTabs();
+      render();
+      uploadModal.classList.remove('active');
     };
     reader.readAsText(file);
-  }
+  };
+
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
 });
