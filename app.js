@@ -8,10 +8,18 @@
 const CATEGORIES = {
   character: { id: 'character', label: 'Agents', file: 'ZZZ - Character History.csv', isEngine: false },
   engine: { id: 'engine', label: 'Moteurs-W', file: 'ZZZ - Engine History.csv', isEngine: true },
-  rescreen: { id: 'rescreen', label: 'Re-screens', file: 'ZZZ - Rescreen History.csv', isEngine: false, hasFirstGuar: true }
+  rescreen: { id: 'rescreen', label: 'Re-screens', file: 'ZZZ - Rescreen History.csv', isEngine: false, hasMixedTypes: true, hasFirstGuar: true }
 };
 
 const ALL_CAT = { id: 'all', label: 'Tous' };
+
+// Source unique des libellés de statut : badge des cartes et champ de la modale.
+const STATUS_LABELS = {
+  win: { badge: '50/50 GAGNÉ', detail: '50/50 Gagné' },
+  loss: { badge: '50/50 PERDU', detail: '50/50 Perdu + Garanti' },
+  guaranteed: { badge: 'GARANTI', detail: 'Garanti' },
+  pending: { badge: 'EN COURS', detail: 'En cours' }
+};
 
 // 2. ETAT DE L'APPLICATION
 const state = {
@@ -26,7 +34,7 @@ const state = {
 
 // 3. UTILITAIRES DE TEXTE & IMAGES (100% DYNAMIQUES)
 const cleanName = s => (s || '').replace(/[\s\-_]+we$|\(we\)$/i, '').trim();
-const isEngineName = s => /\bwe\b|\(we\)$|^w[-_ ]?engine|\bmoteur\b/i.test(s || '');
+const isUnknownName = s => s.includes('?');
 
 function getPortraitUrl(name, isEngine) {
   if (!name || name.includes('?')) return '';
@@ -35,13 +43,6 @@ function getPortraitUrl(name, isEngine) {
     ? `engines/W-Engine_${s.replace(/^(w[-_ ]?engine|moteur[-_ ]?w)\s*[:\-_]?\s*/i, '').replace(/\s+/g, '_')}.webp`
     : `characters/${s.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '')}.webp`;
 }
-
-window.handleImgError = (img, name, isEngine) => {
-  if (!img.dataset.flipped) {
-    img.dataset.flipped = '1';
-    img.src = getPortraitUrl(name, !isEngine);
-  }
-};
 
 const formatAgentHtml = name => (name || '').replace(/\?+/g, m => `<span class="agent-unknown">${m}</span>`);
 
@@ -60,13 +61,42 @@ function parseCSVRows(text) {
   });
 }
 
-function parseCyclesFromCSV(text, catKey) {
+const imageExists = async url => (await fetch(url, { method: 'HEAD' })).ok;
+
+// Le CSV ne type pas ses lignes : le dossier engines/ fait foi.
+async function resolveEngineTypes(cycles) {
+  await Promise.all(cycles.filter(c => !isUnknownName(c.agent)).map(async c => {
+    c.isEngine = await imageExists(getPortraitUrl(c.agent, true));
+  }));
+}
+
+// Le premier tirage abouti de chaque patch, par type, est garanti.
+function markGuaranteedFirst(cycles) {
+  const seenChars = new Set(), seenEngines = new Set();
+  cycles.filter(c => !c.isLoss && !c.isPending).forEach(c => {
+    const patchKey = c.patch.split('->')[0].trim();
+    const seenSet = c.isEngine ? seenEngines : seenChars;
+    if (!seenSet.has(patchKey)) {
+      seenSet.add(patchKey);
+      c.isGuaranteedFirst = true;
+    }
+  });
+}
+
+async function parseCyclesFromCSV(text, catKey) {
+  const cat = CATEGORIES[catKey];
+  const cycles = parseCycleRows(text, catKey);
+  if (cat.hasMixedTypes) await resolveEngineTypes(cycles);
+  if (cat.hasFirstGuar) markGuaranteedFirst(cycles);
+  return cycles;
+}
+
+function parseCycleRows(text, catKey) {
   const rows = parseCSVRows(text);
   if (rows.length < 2) return [];
 
   const cycles = [];
   let currentPatch = '1.0';
-  const seenChars = new Set(), seenEngines = new Set();
 
   for (let i = 1; i < rows.length; i++) {
     const [patchRaw, agentRaw, p1Raw, p2Raw, totRaw, , lostRaw] = rows[i];
@@ -78,7 +108,7 @@ function parseCyclesFromCSV(text, catKey) {
     if (pull1 === 0 && pull2 === 0 && total === 0) continue;
 
     if (patchRaw) {
-      currentPatch = patchRaw.replace(',', '.');
+      currentPatch = patchRaw.replace(/,/g, '.');
       if (currentPatch === '3') currentPatch = '3.0';
     }
 
@@ -90,17 +120,6 @@ function parseCyclesFromCSV(text, catKey) {
     }
 
     const isLoss = Boolean(lostRaw && lostRaw.trim());
-    const isEngine = catKey === 'engine' || isEngineName(targetAgent) || isEngineName(agentRaw);
-    let isGuaranteedFirst = false;
-
-    if (catKey === 'rescreen' && !isLoss) {
-      const patchKey = currentPatch.split('->')[0].trim();
-      const seenSet = isEngine ? seenEngines : seenChars;
-      if (!seenSet.has(patchKey)) {
-        seenSet.add(patchKey);
-        isGuaranteedFirst = true;
-      }
-    }
 
     cycles.push({
       patch: currentPatch,
@@ -112,11 +131,17 @@ function parseCyclesFromCSV(text, catKey) {
       targetPity: isLoss ? (pull2 || pull1) : pull1,
       total,
       type: catKey,
-      isEngine,
-      isGuaranteedFirst
+      isEngine: CATEGORIES[catKey].isEngine,
+      isPending: !isLoss && isUnknownName(targetAgent),
+      isGuaranteedFirst: false
     });
   }
   return cycles;
+}
+
+function cycleOutcome(c) {
+  if (c.isPending) return 'pending';
+  return c.isGuaranteedFirst ? 'guaranteed' : 'win';
 }
 
 function buildItemsFromCycles(cycles) {
@@ -153,7 +178,7 @@ function buildItemsFromCycles(cycles) {
         id: items.length + 1,
         agent: c.agent,
         pity: c.targetPity,
-        status: c.isGuaranteedFirst ? 'guaranteed' : 'win',
+        status: cycleOutcome(c),
         patch: c.patch,
         isEngine: c.isEngine,
         cycle: c
@@ -182,12 +207,15 @@ function updateActiveItems() {
 // 5. CALCUL DES STATISTIQUES
 function computeStats(cycles, items) {
   const totalPulls = cycles.reduce((sum, c) => sum + c.total, 0);
-  const fiftyPulls = cycles.filter(c => !c.isGuaranteedFirst);
+  const resolvedCycles = cycles.filter(c => !c.isPending);
+  const fiftyPulls = resolvedCycles.filter(c => !c.isGuaranteedFirst);
   const wins = fiftyPulls.filter(c => !c.isLoss).length;
   const losses = fiftyPulls.filter(c => c.isLoss).length;
   const total5050 = wins + losses;
   const winRate = total5050 > 0 ? ((wins / total5050) * 100).toFixed(1) : null;
-  const avgPity = items.length > 0 ? (totalPulls / items.length).toFixed(2) : '0';
+  const totalSRanks = items.filter(i => i.status !== 'pending').length;
+  const resolvedPulls = resolvedCycles.reduce((sum, c) => sum + c.total, 0);
+  const avgPity = totalSRanks > 0 ? (resolvedPulls / totalSRanks).toFixed(2) : '0';
 
   let currentStreak = 0, isCurrentWin = true, maxWin = 0, maxLoss = 0, winCount = 0, lossCount = 0;
   fiftyPulls.forEach(c => {
@@ -206,7 +234,7 @@ function computeStats(cycles, items) {
     currentStreak = isCurrentWin ? winCount : lossCount;
   }
 
-  return { totalPulls, wins, losses, winRate, avgPity, totalSRanks: items.length, currentStreak, isCurrentWin, maxWin, maxLoss, has5050: fiftyPulls.length > 0 };
+  return { totalPulls, wins, losses, winRate, avgPity, totalSRanks, currentStreak, isCurrentWin, maxWin, maxLoss, has5050: fiftyPulls.length > 0 };
 }
 
 // 6. RENDU UI
@@ -236,7 +264,7 @@ function renderStatsUI(stats) {
 function renderMedia(name, isEngine, className) {
   if (!name || name.includes('?')) return `<div class="${className}-unknown agent-unknown">???</div>`;
   const url = getPortraitUrl(name, isEngine);
-  return `<img class="${className}-img ${isEngine ? 'is-engine' : ''}" src="${url}" alt="${name}" loading="lazy" onerror="handleImgError(this, '${name.replace(/'/g, "\\'")}', ${isEngine})" />`;
+  return `<img class="${className}-img ${isEngine ? 'is-engine' : ''}" src="${url}" alt="${name}" loading="lazy" />`;
 }
 
 function renderMatrixTile(item) {
@@ -249,11 +277,13 @@ function renderMatrixTile(item) {
     </div>`;
 }
 
-function renderPullCard(item) {
-  let badgeText = item.status === 'loss'
-    ? `50/50 PERDU${item.cycle.bannerFrom || item.cycle.agent ? ` (${item.cycle.bannerFrom || item.cycle.agent})` : ''}`
-    : (item.cycle.isGuaranteedFirst ? 'GARANTI (RESCREEN)' : (item.status === 'guaranteed' ? 'GARANTI' : '50/50 GAGNÉ'));
+function statusBadgeText(item) {
+  const { badge } = STATUS_LABELS[item.status];
+  if (item.status === 'loss') return `${badge} (${item.cycle.bannerFrom || item.cycle.agent})`;
+  return item.cycle.isGuaranteedFirst ? `${badge} (RESCREEN)` : badge;
+}
 
+function renderPullCard(item) {
   return `
     <div class="pull-card" data-status="${item.status}" data-id="${item.id}">
       <div class="pull-card-banner">${renderMedia(item.agent, item.isEngine, 'pull-banner')}</div>
@@ -262,7 +292,7 @@ function renderPullCard(item) {
         <div class="pull-card-row">
           <span class="pull-card-name">${formatAgentHtml(item.agent)}</span>
           ${item.isEngine ? '<span class="badge-we">MOTEUR W</span>' : ''}
-          <span class="status-badge" data-status="${item.status}">${badgeText}</span>
+          <span class="status-badge" data-status="${item.status}">${statusBadgeText(item)}</span>
           ${item.patch ? `<span class="pull-card-patch">v${item.patch}</span>` : ''}
         </div>
       </div>
@@ -276,7 +306,7 @@ function renderPullsUI() {
 
   const searched = state.items.filter(item => {
     if (!q) return true;
-    const matchKw = (item.isEngine && (q.includes('we') || q.includes('moteur'))) || (item.cycle.type === 'rescreen' && q.includes('rescreen'));
+    const matchKw = (item.isEngine && /\b(?:we|moteur)\b/.test(q)) || (item.cycle.type === 'rescreen' && q.includes('rescreen'));
     return item.agent.toLowerCase().includes(q) || item.patch.includes(q) || (item.cycle.lostAgent && item.cycle.lostAgent.toLowerCase().includes(q)) || matchKw;
   });
 
@@ -333,7 +363,7 @@ function renderCategoryTabs() {
         <span class="cat-tab-texture" aria-hidden="true">
           <svg class="cat-tab-halftone-svg" viewBox="0 0 160 50" preserveAspectRatio="none"><use href="#cat-tab-halftone" /></svg>
         </span>
-        <img class="cat-tab-char" src="${url}" alt="${agentName}" loading="lazy" onerror="handleImgError(this, '${agentName}', ${isEngine})" />
+        <img class="cat-tab-char" src="${url}" alt="${agentName}" loading="lazy" />
         <span class="cat-tab-label">${cat.label}</span>
       </button>`;
   }).join('');
@@ -361,7 +391,7 @@ function openDetailModal(item) {
     ? `<div class="detail-bays-grid">${renderBox(c.lostAgent, 'loss', c.lostPity)}${renderBox(c.agent, 'guaranteed', c.targetPity)}</div>`
     : `<div class="detail-bays-single">${renderBox(c.agent, item.status, item.pity)}</div>`;
 
-  const statusLabel = isLoss ? '50/50 Perdu + Garanti' : (item.status === 'guaranteed' ? 'Garanti' : '50/50 Gagné');
+  const statusLabel = STATUS_LABELS[isLoss ? 'loss' : item.status].detail;
 
   document.getElementById('detail-modal-content').innerHTML = `
     <div class="detail-console-interior">
@@ -382,7 +412,7 @@ async function loadCSVData() {
   await Promise.all(Object.entries(CATEGORIES).map(async ([k, cat]) => {
     try {
       const res = await fetch(encodeURI(cat.file), { cache: 'no-cache' });
-      if (res.ok) state.cycles[k] = parseCyclesFromCSV(await res.text(), k);
+      if (res.ok) state.cycles[k] = await parseCyclesFromCSV(await res.text(), k);
     } catch (e) {
       console.warn(`Chargement ${cat.file} ignoré:`, e);
     }
@@ -478,8 +508,8 @@ document.addEventListener('DOMContentLoaded', () => {
       (document.querySelector('input[name="import-target"]:checked')?.value || 'character');
 
     const reader = new FileReader();
-    reader.onload = ev => {
-      state.cycles[target] = parseCyclesFromCSV(ev.target.result, target);
+    reader.onload = async ev => {
+      state.cycles[target] = await parseCyclesFromCSV(ev.target.result, target);
       state.category = target;
       updateActiveItems();
       renderCategoryTabs();
